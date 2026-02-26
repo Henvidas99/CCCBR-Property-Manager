@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== LIGHT (default) ===== */
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f8fafc;
+}
+
+/* ===== DARK ===== */
+[data-theme="dark"] {
+  --color-bg: #020617;
+  --color-surface: #0f172a;
+}
+
+/* base app styles */
+body {
+  margin: 0;
+  background: var(--color-bg);
+  font-family: Inter, system-ui;
+}
