@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { defineNuxtConfig } from "nuxt/config";
 
 export default defineNuxtConfig({
@@ -25,7 +26,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: 'https://localhost:5001/api'
+      apiBase: 'http://localhost:5000/api',
+      googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     }
   },
 
