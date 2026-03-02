@@ -1,6 +1,11 @@
 /// <reference types="node" />
 import { defineNuxtConfig } from "nuxt/config";
 
+const apiBase =
+  process.env.NODE_ENV === 'production'
+    ? 'https://alienrealty-backend-e9f2c9grecgjcjbz.centralus-01.azurewebsites.net/api'
+    : 'http://localhost:5000/api'
+
 export default defineNuxtConfig({
   devtools: { enabled: true },
   components: true,
@@ -26,7 +31,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: 'http://localhost:5000/api',
+      apiBase: apiBase,
       googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     }
   },
