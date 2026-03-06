@@ -80,6 +80,7 @@ const fetchExchangeRate = async () => {
     exchangeCompra.value      = data.compra
     exchangeVenta.value       = data.venta
     exchangeRateUpdated.value = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })
+
   } catch {
     exchangeRateError.value = true
   } finally {
