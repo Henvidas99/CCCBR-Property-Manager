@@ -127,7 +127,8 @@ import {
   GitBranch,
   UserCheck,
   Handshake,
-  Briefcase
+  Briefcase,
+  Blocks
 } from 'lucide-vue-next'
 
 interface MenuItem {
@@ -157,36 +158,39 @@ const menu: MenuSection[] = [
   {
     title: 'Inicio',
     items: [
-      { key: 'explorer', name: 'Explorador', link: '/', icon: Compass },
+      { key: 'explorer', name: 'Explorador', link: '/explorer', icon: Compass },
       { key: 'portfolio', name: 'Portafolio', link: '/portfolio', icon: Briefcase  },
       { key: 'marketplace', name: 'Marketplace', link: '/marketplace', icon: ShoppingBag }
     ]
   },
 
-  {
-    title: 'Red Inmobiliaria',
-    items: [
-      { key: 'brokers', name: 'Brokers', link: '/', icon: UserCheck },
-      { key: 'groups', name: 'Grupos', link: '/', icon: Users },
-      { key: 'alliances', name: 'Alianzas', link: '/', icon: Handshake }
-    ]
-  },
+  // {
+  //   title: 'Red Inmobiliaria',
+  //   items: [
+  //     { key: 'brokers', name: 'Brokers', link: '/', icon: UserCheck },
+  //     { key: 'groups', name: 'Grupos', link: '/', icon: Users },
+  //     { key: 'partners', name: 'Socios', link: '/', icon: Handshake }
+  //   ]
+  // },
 
   {
   title: 'Clientes',
     items: [
-      { key: 'contacts', name: 'Contactos', link: '/', icon: Contact },
-      { key: 'requests', name: 'Solicitudes', link: '/', icon: ClipboardList },
-      { key: 'pipeline', name: 'Embudo', link: '/', icon: GitBranch }
+      { key: 'contacts', name: 'Contactos', link: '/explorer', icon: Contact },
+      { key: 'requests', name: 'Solicitudes', link: '/explorer', icon: ClipboardList },
+      { key: 'pipeline', name: 'Embudo', link: '/explorer', icon: GitBranch },
+      { key: 'appointments', name: 'Citas', link: '/explorer', icon: Calendar }
     ]
   },
 
   {
     title: 'Comunidad',
     items: [
-       { key: 'forum', name: 'Foro', link: '/', icon: Newspaper },
-      { key: 'chat', name: 'Chat', link: '/', icon: MessageSquare },
-      { key: 'appointments', name: 'Citas', link: '/', icon: Calendar }
+       { key: 'forum', name: 'Foro', link: '/forum', icon: Newspaper },
+       { key: 'brokers', name: 'Brokers', link: '/explorer', icon: UserCheck },
+      { key: 'chat', name: 'Chat', link: '/chats', icon: MessageSquare },
+      // { key: 'groups', name: 'Grupos', link: '/explorer', icon: Users },
+      { key: 'partners', name: 'Socios', link: '/explorer', icon: Handshake }
     ]
   },
 
@@ -194,7 +198,8 @@ const menu: MenuSection[] = [
     title: 'Cuenta',
     items: [
       { key: 'profile', name: 'Perfil', link: '/profile', icon: User },
-      { key: 'web-site', name: 'Sitio Web', link: '/profile', icon: Globe }
+      { key: 'web-site', name: 'Sitio Web', link: '/profile', icon: Globe },
+      { key: 'integrations', name: 'Integraciones', link: '/profile', icon: Blocks }
     ]
   }
 

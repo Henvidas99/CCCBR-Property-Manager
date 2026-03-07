@@ -14,14 +14,14 @@
     <!-- Título -->
     <h1
       class="text-gray-800 text-xl font-semibold flex-1 text-center lg:text-left truncate max-w-[50%] sm:max-w-[60%] xs:hidden"
-      title="CCCBR Property Manager"
+      title="CCCBR Manager"
     >
-      CCCBR Property Manager
+      CCCBR Manager
     </h1>
 
     <!-- Botones de acción -->
     <div class="flex items-center space-x-4">
-      <button class="flex items-center justify-center h-10 w-10 rounded-full bg-gray-100 hover:bg-gray-200 transition">
+      <button @click='showChat = true' class="flex items-center justify-center h-10 w-10 rounded-full bg-gray-100 hover:bg-gray-200 transition">
         <ChatBubbleLeftEllipsisIcon class="h-5 w-5 text-gray-700" />
       </button>
 
@@ -33,6 +33,7 @@
       <button @click="logout" class="flex items-center justify-center h-10 w-10 rounded-full bg-gray-100 hover:bg-gray-200 transition">
         <ArrowRightStartOnRectangleIcon class="h-5 w-5 text-gray-700" />
       </button>
+       <ChatModal v-model="showChat" />
     </div>
   </header>
 </template>
@@ -43,8 +44,12 @@ import {
   BellIcon,
   ArrowRightStartOnRectangleIcon
 } from '@heroicons/vue/24/outline'
+import { ref } from 'vue'
+import ChatModal from '../../components/chats/ChatModal.vue'
+
+const showChat = ref(false)
 
 const logout = () => {
-  console.log('Cerrar sesión')
+  navigateTo('/')
 }
 </script>

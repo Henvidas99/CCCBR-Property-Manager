@@ -10,9 +10,14 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   components: true,
 
+  vue: {
+    compilerOptions: {
+      isCustomElement: (tag) => tag === 'emoji-picker',
+    },
+  },
   app: {
     head: {
-      title: 'CCCBR Property Manager',
+      title: 'CCCBR Manager',
       meta: [
         { name: 'description', content: 'Sistema de gestión CCCBR' }
       ]
