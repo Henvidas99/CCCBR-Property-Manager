@@ -26,10 +26,8 @@
         <div class="flex flex-col justify-center px-8 py-10 md:px-10">
           <!-- Header -->
           <div class="mb-8">
-            <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-1">Bienvenido (a)</p>
-            <h2 class="text-white text-2xl font-bold tracking-tight" style="font-family: 'Syne', sans-serif;">
-              Iniciar Sesión
-            </h2>
+            <p class="text-slate-800 text-xs font-semibold uppercase tracking-widest mb-1">Bienvenido (a)</p>
+            <h2 class="text-slate text-2xl font-bold tracking-tight" style="font-family: 'Syne', sans-serif;">Iniciar Sesión</h2>
           </div>
 
           <!-- Form -->
@@ -73,7 +71,7 @@
                 <button
                   type="button"
                   @click="showPassword = !showPassword"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
                 >
                   <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -87,15 +85,15 @@
             </div>
 
             <div v-if="errorMessage" class="flex items-center gap-2 mt-4 p-3 rounded-50 bg-red-500/10 border border-red-500/30">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-secondary flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
               </svg>
-              <span class="text-red-400 text-sm">{{ errorMessage }}</span>
+              <span class="text-secondary text-sm">{{ errorMessage }}</span>
             </div>
 
             <!-- Forgot password -->
             <div class="flex justify-end -mt-2">
-              <NuxtLink to="/forgot-password" class="text-xs text-white/50 hover:text-secondary-light transition-colors underline underline-offset-2">
+              <NuxtLink to="/forgot-password" class="text-xs text-[#28323f] hover:text-secondary-light transition-colors underline underline-offset-2">
                 ¿Olvidaste tu contraseña?
               </NuxtLink>
             </div>
@@ -123,9 +121,9 @@
 
             <!-- Divider -->
             <div class="flex items-center gap-3 my-1">
-              <div class="flex-1 h-px bg-white/10" />
-              <span class="text-white/30 text-xs uppercase tracking-widest">o</span>
-              <div class="flex-1 h-px bg-white/10" />
+              <div class="flex-1 h-px bg-slate-200" />
+              <span class="text-[#28323f] text-xs uppercase tracking-widest">o</span>
+              <div class="flex-1 h-px bg-slate-200" />
             </div>
 
             <!-- Google Login -->
@@ -142,7 +140,7 @@
         </div>
 
         <!-- Divider vertical (desktop only) -->
-        <div class="hidden md:block absolute left-1/2 top-8 bottom-8 w-px bg-white/10 -translate-x-1/2" />
+        <div class="hidden md:block absolute left-1/2 top-8 bottom-8 w-px bg-slate-200 -translate-x-1/2" />
 
         <!-- RIGHT: Brand -->
         <div class="hidden md:flex flex-col items-center justify-center px-10 py-10 relative">
@@ -172,15 +170,15 @@
           </h2>
 
           <!-- Tagline -->
-          <p class="text-white/30 text-xs text-center mt-4 max-w-[180px] leading-relaxed tracking-wide">
+         <p class="text-slate-800 text-xs text-center mt-4 max-w-[180px] leading-relaxed tracking-wide">
             Plataforma de gestión para brokers profesionales
           </p>
 
           <!-- Decorative line -->
           <div class="mt-6 flex items-center gap-2">
-            <div class="w-6 h-px bg-secondary/60" />
-            <div class="w-2 h-2 rounded-full bg-secondary/60" />
-            <div class="w-6 h-px bg-secondary/60" />
+            <div class="w-6 h-px bg-primary/90" />
+            <div class="w-2 h-2 rounded-full bg-secondary" />
+            <div class="w-6 h-px bg-primary/90" />
           </div>
         </div>
 
@@ -267,10 +265,22 @@ function handleGoogle() {
 
 /* ─── Card Glass ─────────────────────────────── */
 .card-glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+
+  background:  rgba(255,255,255,0.6);
+
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255,255,255,0.8);
+
+  box-shadow:
+    0 30px 80px rgba(0,0,0,0.35),
+    0 10px 30px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.9);
+
 }
+
 
 /* ─── Orbs ───────────────────────────────────── */
 .orb {
@@ -310,7 +320,7 @@ function handleGoogle() {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: rgba(255,255,255,0.45);
+  color: #28323f;
 }
 .input-wrapper { position: relative; }
 .input-icon {
@@ -318,28 +328,44 @@ function handleGoogle() {
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255,255,255,0.35);
+   color: #64748b;
   display: flex;
   align-items: center;
 }
 .field-input {
+
   width: 100%;
-  padding: 10px 12px 10px 36px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
+  padding: 11px 12px 11px 36px;
+
+  background: rgba(255,255,255,0.9);
+
+  border: 1px solid rgba(32,45,89,0.15);
+
   border-radius: 10px;
-  color: #fff;
+
+  color: #1e293b;
+
   font-size: 0.875rem;
+
   outline: none;
-  transition: border-color 0.2s, background 0.2s;
-}
-.field-input::placeholder { color: rgba(255,255,255,0.25); }
-.field-input:focus {
-  border-color: rgba(163, 30, 34, 0.6);
-  background: rgba(255,255,255,0.09);
-  box-shadow: 0 0 0 3px rgba(163,30,34,0.15);
+
+  transition: all 0.25s ease;
 }
 
+.field-input::placeholder {
+  color: rgba(0,0,0,0.35);
+}
+
+.field-input:focus {
+
+  border-color: #a31e22;
+
+  background: #fff;
+
+  box-shadow:
+    0 0 0 3px rgba(163,30,34,0.15);
+
+}
 /* ─── Buttons ────────────────────────────────── */
 .btn-primary {
   width: 100%;
@@ -353,6 +379,11 @@ function handleGoogle() {
   cursor: pointer;
   transition: all 0.3s ease;
   background: linear-gradient(135deg, #202d59 0%, #a31e22 100%);
+   box-shadow:
+    0 5px 15px rgba(32,45,89,0.45),
+    0 3px 10px rgba(163,30,34,0.35);
+
+  transition: all 0.3s ease;
 }
 .btn-primary:hover {
   background: linear-gradient(135deg, #a31e22 0%, #202d59 100%);
@@ -363,26 +394,42 @@ function handleGoogle() {
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
 .btn-google {
+
   width: 100%;
   padding: 10px 20px;
+
   border-radius: 10px;
+
   font-weight: 600;
+
   font-size: 0.875rem;
-  color: rgba(255,255,255,0.85);
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.15);
+
+  color: #1e293b;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
   cursor: pointer;
+
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+
   transition: all 0.25s ease;
 }
+
 .btn-google:hover {
-  background: rgba(255,255,255,0.13);
-  border-color: rgba(255,255,255,0.28);
+
+  background: #f8fafc;
+
+  border-color: #8a9baf;
+
   transform: translateY(-1px);
+
 }
+
 
 /* ─── Logo ───────────────────────────────────── */
 .logo-container {
@@ -422,7 +469,7 @@ function handleGoogle() {
   font-size: 2.5rem;
   font-weight: 800;
   letter-spacing: 0.15em;
-  background: linear-gradient(135deg, #2a3a6e 0%, #c42b2f 60%, #fff 100%);
+  background: linear-gradient(135deg, #2a3a6e 0%, #c42b2f 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -432,7 +479,7 @@ function handleGoogle() {
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.3em;
-  background: linear-gradient(135deg, #a31e22 0%, #ffffff 100%);
+  background: linear-gradient(135deg, #a31e22 0%, #363636 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -442,7 +489,7 @@ function handleGoogle() {
   font-size: 0.85rem;
   font-weight: 800;
   letter-spacing: 0.2em;
-  background: linear-gradient(90deg, #a31e22, #fff, #202d59);
+  background: linear-gradient(90deg, #a31e22, #473e3e, #202d59);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
