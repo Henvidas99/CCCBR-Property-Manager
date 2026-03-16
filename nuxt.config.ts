@@ -3,8 +3,8 @@ import { defineNuxtConfig } from "nuxt/config";
 
 const apiBase =
   process.env.NODE_ENV === 'production'
-    ? 'https://alienrealty-backend-e9f2c9grecgjcjbz.centralus-01.azurewebsites.net/api'
-    : 'http://localhost:5000/api'
+    ? 'https:// cccbr-be-e6b9achpa3g6exgf.canadacentral-01.azurewebsites.net/api'
+    : 'http://localhost:3001/api'
 
 export default defineNuxtConfig({
   devtools: { enabled: true },

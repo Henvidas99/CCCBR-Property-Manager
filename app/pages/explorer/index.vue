@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { useFilterSidebar } from '~/composables/useFilterSidebar'
-import { useLocation } from '~/composables/useLocation'
 import { useProperties } from '~/composables/useProperties'
-import type { ApiActiveAdPagedResponse } from '~/types'
+import type { ApiActiveAdItem, ApiActiveAdPagedResponse } from '~/types'
 
-const config  = useRuntimeConfig()
-const { selectedProvince, selectedCantons, selectedDistricts } = useLocation()
 const { buildApiUrl, mapApiPropertyToListing } = useProperties()
 const { isFilterSidebarOpen, closeFilterSidebar } = useFilterSidebar()
 
@@ -14,23 +11,26 @@ const { isFilterSidebarOpen, closeFilterSidebar } = useFilterSidebar()
 const currentPage  = ref(1)
 const itemsPerPage = 10
 
-// ── API URL (reactive to location filters and page) ───────────────────────────
+// ── API URL (reactive to page) ────────────────────────────────────────────────
 
-const apiUrl = buildApiUrl(currentPage, itemsPerPage, selectedProvince, selectedCantons, selectedDistricts)
+const apiUrl = buildApiUrl(currentPage, itemsPerPage)
 
-const { data: rawData, error, status } = await useFetch<ApiActiveAdPagedResponse>(
-  apiUrl,
-  { key: 'property-explorer', watch: [apiUrl] }
+const { data: rawData, error, status } = await useFetch<ApiActiveAdItem[] | ApiActiveAdPagedResponse>(
+  () => apiUrl.value,
+  { key: () => `property-explorer-${currentPage.value}` }
 )
 
 // ── Derived data ──────────────────────────────────────────────────────────────
 
-const listings   = computed(() => rawData.value?.items?.map(mapApiPropertyToListing) ?? [])
-const totalCount = computed(() => rawData.value?.totalCount ?? 0)
-const totalPages = computed(() => Math.ceil(totalCount.value / itemsPerPage))
+const resolveItems = (data: ApiActiveAdItem[] | ApiActiveAdPagedResponse | null | undefined): ApiActiveAdItem[] => {
+  if (!data) return []
+  if (Array.isArray(data)) return data
+  return (data as ApiActiveAdPagedResponse).items ?? []
+}
 
-// Reset to page 1 whenever filters change
-watch([selectedProvince, selectedCantons, selectedDistricts], () => { currentPage.value = 1 })
+const listings    = computed(() => resolveItems(rawData.value).map(mapApiPropertyToListing))
+const hasNextPage = computed(() => resolveItems(rawData.value).length >= itemsPerPage)
+const hasPrevPage = computed(() => currentPage.value > 1)
 
 // ── Client-side filters ───────────────────────────────────────────────────────
 
@@ -115,24 +115,8 @@ onMounted(fetchExchangeRate)
 
 // ── Pagination helpers ────────────────────────────────────────────────────────
 
-const displayedPages = computed(() => {
-  const pages: number[] = []
-  const total   = totalPages.value
-  const current = currentPage.value
-  if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i)
-  } else if (current <= 3) {
-    pages.push(1, 2, 3, 4, 5)
-  } else if (current >= total - 2) {
-    pages.push(total - 4, total - 3, total - 2, total - 1, total)
-  } else {
-    pages.push(current - 2, current - 1, current, current + 1, current + 2)
-  }
-  return pages
-})
-
 const goToPage = (page: number) => {
-  if (page >= 1 && page <= totalPages.value) {
+  if (page >= 1 && (page < currentPage.value || hasNextPage.value)) {
     currentPage.value = page
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -140,14 +124,7 @@ const goToPage = (page: number) => {
 
 // ── Page title ────────────────────────────────────────────────────────────────
 
-const pageTitle = computed(() => {
-  if (selectedDistricts.value.length > 1)   return `Propiedades en ${selectedDistricts.value.length} distritos, ${selectedProvince.value}`
-  if (selectedDistricts.value.length === 1) return `Propiedades en ${selectedDistricts.value[0]}, ${selectedProvince.value}`
-  if (selectedCantons.value.length > 1)     return `Propiedades en ${selectedCantons.value.length} cantones, ${selectedProvince.value}`
-  if (selectedCantons.value.length === 1)   return `Propiedades en ${selectedCantons.value[0]}, ${selectedProvince.value}`
-  if (selectedProvince.value)               return `Propiedades en ${selectedProvince.value}`
-  return 'Propiedades en Costa Rica'
-})
+const pageTitle = 'Propiedades en Costa Rica'
 
 // ── Filter sidebar handlers ───────────────────────────────────────────────────
 
@@ -172,12 +149,7 @@ const clearFilters = () => {
 
 const showMapModal = ref(false)
 
-const mapCenterLocation = computed(() => {
-  if (selectedDistricts.value.length === 1) return `${selectedDistricts.value[0]}, ${selectedProvince.value}`
-  if (selectedCantons.value.length === 1)   return `${selectedCantons.value[0]}, ${selectedProvince.value}`
-  if (selectedCantons.value.length > 1)     return selectedProvince.value
-  return selectedProvince.value
-})
+const mapCenterLocation = 'Costa Rica'
 </script>
 
 <template>
@@ -188,14 +160,15 @@ const mapCenterLocation = computed(() => {
       <div class="h-1 bg-[#202d59] animate-pulse"></div>
     </div>
 
-    <!-- Error state (only when no data at all) -->
-    <div v-if="error && !rawData" class="flex items-center justify-center min-h-[50vh]">
+    <!-- Error state -->
+    <div v-if="error" class="flex items-center justify-center min-h-[50vh]">
       <div class="text-center">
         <svg class="w-16 h-16 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
         <h3 class="text-lg font-semibold text-gray-900 mb-2">Error al cargar propiedades</h3>
         <p class="text-gray-600">{{ error.message }}</p>
+        <p class="text-xs text-gray-400 mt-1">{{ error.statusCode }} — {{ (error as any)?.data?.message ?? error.data }}</p>
       </div>
     </div>
 
@@ -213,7 +186,7 @@ const mapCenterLocation = computed(() => {
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{{ pageTitle }}</h1>
-            <p class="text-sm text-gray-500">{{ totalCount }} propiedades disponibles</p>
+            <p class="text-sm text-gray-500">{{ listings.length }} propiedades en esta pagina</p>
           </div>
 
           <!-- Compact exchange rate pill -->
@@ -285,28 +258,23 @@ const mapCenterLocation = computed(() => {
         </div>
 
         <!-- Pagination -->
-        <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 py-8 mt-8">
+        <div v-if="hasPrevPage || hasNextPage" class="flex justify-center items-center gap-2 py-8 mt-8">
           <button
             @click="goToPage(currentPage - 1)"
-            :disabled="currentPage === 1"
-            :class="['px-4 py-2 border-2 rounded-lg cursor-pointer text-sm font-medium transition-all', currentPage === 1 ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed' : 'border-gray-300 bg-white text-gray-700 hover:border-[#202d59] hover:text-[#202d59]']"
+            :disabled="!hasPrevPage"
+            :class="['px-4 py-2 border-2 rounded-lg cursor-pointer text-sm font-medium transition-all', !hasPrevPage ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed' : 'border-gray-300 bg-white text-gray-700 hover:border-[#202d59] hover:text-[#202d59]']"
           >
             ← Anterior
           </button>
 
-          <button
-            v-for="page in displayedPages"
-            :key="page"
-            @click="goToPage(page)"
-            :class="['px-4 py-2 border-2 rounded-lg cursor-pointer text-sm font-medium transition-all', currentPage === page ? 'bg-[#202d59] border-[#202d59] text-white' : 'border-gray-300 bg-white text-gray-700 hover:border-[#202d59] hover:text-[#202d59]']"
-          >
-            {{ page }}
-          </button>
+          <span class="px-4 py-2 text-sm font-medium text-gray-700">
+            {{ currentPage }}
+          </span>
 
           <button
             @click="goToPage(currentPage + 1)"
-            :disabled="currentPage === totalPages"
-            :class="['px-4 py-2 border-2 rounded-lg cursor-pointer text-sm font-medium transition-all', currentPage === totalPages ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed' : 'border-gray-300 bg-white text-gray-700 hover:border-[#202d59] hover:text-[#202d59]']"
+            :disabled="!hasNextPage"
+            :class="['px-4 py-2 border-2 rounded-lg cursor-pointer text-sm font-medium transition-all', !hasNextPage ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed' : 'border-gray-300 bg-white text-gray-700 hover:border-[#202d59] hover:text-[#202d59]']"
           >
             Siguiente →
           </button>

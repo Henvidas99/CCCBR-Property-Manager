@@ -139,8 +139,8 @@ const getJitter = (id: number, axis: 'lat' | 'lng') => {
 const getPropertyCoords = (item: ApiActiveAdItem) => {
   const base = COUNTY_COORDS[item.county] ?? PROVINCE_COORDS[item.province] ?? CR_CENTER
   return {
-    lat: base.lat + getJitter(item.id, 'lat'),
-    lng: base.lng + getJitter(item.id, 'lng'),
+    lat: base.lat + getJitter(item.id_Property, 'lat'),
+    lng: base.lng + getJitter(item.id_Property, 'lng'),
   }
 }
 
@@ -184,7 +184,7 @@ const sortedItems = computed<ApiActiveAdItem[]>(() => {
 const displayedItems = computed<ApiActiveAdItem[]>(() => {
   const items = sortedItems.value
   if (selectedItemId.value === null) return items
-  const idx = items.findIndex(i => i.id === selectedItemId.value)
+  const idx = items.findIndex(i => i.id_Property === selectedItemId.value)
   if (idx <= 0) return items
   const copy = [...items]
   const [selected] = copy.splice(idx, 1)
@@ -413,7 +413,7 @@ const initMap = async () => {
     // NOTE: Update this endpoint when the API changes
     loadingMessage.value = 'Cargando propiedades...'
     const response = await $fetch<ApiActiveAdItem[] | ApiActiveAdPagedResponse>(
-      `${config.public.apiBase}/PropertyAd/active/all`
+      `${config.public.apiBase}/PropertyListing/get-all-properties`
     )
     const items: ApiActiveAdItem[] = Array.isArray(response)
       ? response
@@ -437,13 +437,14 @@ const initMap = async () => {
 
       const marker = new AdvancedMarkerElement({ map, position: coords, content: pill, title: item.title })
 
-      const imgHtml    = item.photoUrl ? `<img src="${item.photoUrl}" style="width:100%;height:100px;object-fit:cover;display:block;" />` : ''
+      const photoUrl   = item.photos?.[0]?.url ?? ''
+      const imgHtml    = photoUrl ? `<img src="${photoUrl}" style="width:100%;height:100px;object-fit:cover;display:block;" />` : ''
       const modeColor  = getModeColor(item.modeDescription)
       const areaHtml   = item.dimension ? `<p style="margin:0 0 3px;font-size:11px;color:#555;">📐 ${item.dimension} m<sup style="font-size:8px;vertical-align:super;">2</sup></p>` : ''
 
       const infoContent = `
         <div style="width:220px;font-family:sans-serif;overflow:hidden;cursor:pointer;"
-             onclick="window.__mapNavigate(${item.id})">
+             onclick="window.__mapNavigate(${item.id_Property})">
           ${imgHtml}
           <div style="padding:8px 10px 10px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
@@ -471,7 +472,7 @@ const initMap = async () => {
         if (activeInfoWindow) activeInfoWindow.close()
         infoWindow.open({ anchor: marker, map })
         activeInfoWindow = infoWindow
-        selectedItemId.value = item.id
+        selectedItemId.value = item.id_Property
         sidebarVisible.value = true
         nextTick(() => { sidebarListRef.value?.scrollTo({ top: 0, behavior: 'smooth' }) })
       })
@@ -670,23 +671,23 @@ onUnmounted(() => {
 
                 <div
                   v-for="item in displayedItems"
-                  :key="item.id"
-                  @click="emit('listing-click', item.id); emit('close')"
+                  :key="item.id_Property"
+                  @click="emit('listing-click', item.id_Property); emit('close')"
                   class="border-b border-gray-100 cursor-pointer transition-all duration-150 border-r-4"
-                  :class="selectedItemId === item.id ? 'bg-red-50 border-r-[#a31e22]' : 'hover:bg-gray-50 border-r-transparent'"
+                  :class="selectedItemId === item.id_Property ? 'bg-red-50 border-r-[#a31e22]' : 'hover:bg-gray-50 border-r-transparent'"
                 >
                   <div class="relative w-full h-28 overflow-hidden">
-                    <img v-if="item.photoUrl" :src="item.photoUrl" :alt="item.title" class="w-full h-full object-cover" />
+                    <img v-if="item.photos?.[0]?.url" :src="item.photos[0].url" :alt="item.title" class="w-full h-full object-cover" />
                     <div v-else class="w-full h-full bg-gradient-to-br from-[#202d59] to-[#00cfe5] flex items-center justify-center text-4xl">🏠</div>
 
-                    <span v-if="item.publishedTimeAgo" class="absolute top-2 left-2 px-2 py-0.5 rounded text-xs font-semibold bg-[#202d59]/85 text-white backdrop-blur-sm flex items-center gap-1">
+                    <span v-if="item.createdDate" class="absolute top-2 left-2 px-2 py-0.5 rounded text-xs font-semibold bg-[#202d59]/85 text-white backdrop-blur-sm flex items-center gap-1">
                       <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      {{ item.publishedTimeAgo }}
+                      {{ new Date(item.createdDate).toLocaleDateString('es-CR') }}
                     </span>
 
-                    <div v-if="selectedItemId === item.id" class="absolute top-2 right-2 w-6 h-6 bg-[#a31e22] rounded-full flex items-center justify-center shadow-md">
+                    <div v-if="selectedItemId === item.id_Property" class="absolute top-2 right-2 w-6 h-6 bg-[#a31e22] rounded-full flex items-center justify-center shadow-md">
                       <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                       </svg>

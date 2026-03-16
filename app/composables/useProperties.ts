@@ -24,18 +24,18 @@ export const mapApiPropertyToListing = (ad: ApiActiveAdItem): Listing => {
   if (ad.modeDescription) specs.push(ad.modeDescription)
 
   return {
-    id: String(ad.id),
+    id: String(ad.id_Property),
     title: ad.title,
     price: formatPrice(ad.price, ad.currency),
     location,
-    image: ad.photoUrl || '',
+    image: ad.photos?.[0]?.url ?? '',
     specs,
     province: ad.province,
     county: ad.county,
     modeDescription: ad.modeDescription,
-    publisherName: ad.publisherFullName || 'Agente',
-    publisherImage: ad.publisherProfileImage || undefined,
-    publishedTimeAgo: ad.publishedTimeAgo,
+    publisherName: ad.userFullName || 'Agente',
+    publisherImage: undefined,
+    publishedTimeAgo: undefined,
   }
 }
 
@@ -47,36 +47,11 @@ export const useProperties = () => {
   // NOTE: Update `apiBase` path here when the endpoint changes
   const apiBase = config.public.apiBase
 
-  // Build the reactive API URL based on location filters and pagination
+  // Build the reactive API URL based on pagination
   const buildApiUrl = (
     page: Ref<number>,
     pageSize: number,
-    province: { readonly value: string },
-    cantons: { readonly value: readonly string[] },
-    districts: { readonly value: readonly string[] },
-  ) => computed(() => {
-    const p = province.value
-    const c = cantons.value
-    const d = districts.value
-    const pg = page.value
-
-    // Filter by districts (most specific)
-    if (d.length > 0) {
-      const params = d.map(v => `districts=${encodeURIComponent(v)}`).join('&')
-      return `${apiBase}/PropertyAd/active/by-district/${pg}/${pageSize}?${params}`
-    }
-    // Filter by cantons
-    if (c.length > 0) {
-      const params = c.map(v => `counties=${encodeURIComponent(v)}`).join('&')
-      return `${apiBase}/PropertyAd/active/by-county/${pg}/${pageSize}?${params}`
-    }
-    // Filter by province
-    if (p) {
-      return `${apiBase}/PropertyAd/active/by-province/${encodeURIComponent(p)}/${pg}/${pageSize}`
-    }
-    // No filter — get all
-    return `${apiBase}/PropertyAd/active/${pg}/${pageSize}`
-  })
+  ) => computed(() => `${apiBase}/PropertyListing/get-all-properties?page=${page.value}&pageSize=${pageSize}`)
 
   return { buildApiUrl, mapApiPropertyToListing }
 }

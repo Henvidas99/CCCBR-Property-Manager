@@ -13,33 +13,35 @@ export interface Province {
 }
 
 // ============================================
-// PropertyAd Active Listing Types (public endpoints)
+// PropertyListing Types (public endpoints)
 // ============================================
 
 export interface ApiActiveAdItem {
-  id: number
-  propertyId: number | null
+  id_Property: number
+  code: string
   title: string
+  description: string | null
+  dimension: string | null
   price: number
   currency: string
+  payment_Frequency: string | null
   address_Description: string
   province: string
   county: string
   district: string
   zone: string | null
+  latitude: string | null
+  longitude: string | null
   categoryName: string
   modeDescription: string
-  status: string
-  expirationDate: string
+  userFullName: string
+  userId: number
+  photos: { url?: string; [key: string]: any }[]
   viewCount: number
-  daysRemaining: number
-  photoUrl: string
-  publishedTimeAgo: string
-  publisherFullName: string
-  publisherEmail: string
-  publisherPhone: string
-  publisherProfileImage: string | null
-  dimension?: string
+  createdDate: string
+  updatedDate: string | null
+  visibility: string
+  amenities: string | null
 }
 
 export interface ApiActiveAdPagedResponse {
