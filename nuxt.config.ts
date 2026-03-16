@@ -3,7 +3,7 @@ import { defineNuxtConfig } from "nuxt/config";
 
 const apiBase =
   process.env.NODE_ENV === 'production'
-    ? 'https:// cccbr-be-e6b9achpa3g6exgf.canadacentral-01.azurewebsites.net/api'
+    ? 'https://cccbr-be-e6b9achpa3g6exgf.canadacentral-01.azurewebsites.net/api'
     : 'http://localhost:3001/api'
 
 export default defineNuxtConfig({
