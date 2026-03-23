@@ -21,10 +21,19 @@ export interface ApiActiveAdItem {
   code: string
   title: string
   description: string | null
+  details: string | null
   dimension: string | null
+  services: string | null
+  amenities: string | null
+  id_Mode: number
+  modeDescription: string
+  id_Category: number
+  categoryName: string
   price: number
   currency: string
   payment_Frequency: string | null
+  commission: number | null
+  commisionType: string | null
   address_Description: string
   province: string
   county: string
@@ -32,16 +41,18 @@ export interface ApiActiveAdItem {
   zone: string | null
   latitude: string | null
   longitude: string | null
-  categoryName: string
-  modeDescription: string
-  userFullName: string
+  google_Maps: string | null
+  facebookUrl: string | null
+  instagramUrl: string | null
+  visibility: string
+  moduleStateId: number | null
   userId: number
+  userFullName: string
   photos: { url?: string; [key: string]: any }[]
-  viewCount: number
   createdDate: string
   updatedDate: string | null
-  visibility: string
-  amenities: string | null
+  score: number | null
+  viewCount: number
 }
 
 export interface ApiActiveAdPagedResponse {
@@ -49,6 +60,11 @@ export interface ApiActiveAdPagedResponse {
   totalCount: number
   pageSize: number
   currentPage: number
+}
+
+export interface ApiCategory {
+  id_Category: number
+  name: string
 }
 
 export interface ApiMyPropertiesPagedResponse {
