@@ -28,7 +28,7 @@ export const mapApiPropertyToListing = (ad: ApiActiveAdItem): Listing => {
     title: ad.title,
     price: formatPrice(ad.price, ad.currency),
     location,
-    image: ad.photos?.[0]?.url ?? '',
+    image: (typeof ad.photos?.[0] === 'string' ? ad.photos[0] : (ad.photos?.[0] as any)?.url) ?? '',
     specs,
     province: ad.province,
     county: ad.county,

@@ -97,11 +97,35 @@
       <div
         class="w-full flex items-center space-x-3 bg-contrast rounded-2xl p-3 shadow-md hover:shadow-lg transition-shadow duration-300"
       >
-        <img src="/avatar.png" class="h-10 w-10 rounded-full border-2 border-primary/20" />
+        <!-- Avatar -->
+        <div class="relative h-10 w-10 shrink-0">
+          <img
+            v-if="user?.photo"
+            :src="user.photo"
+            :alt="user.fullName"
+            class="h-10 w-10 rounded-full border-2 border-primary/20 object-cover"
+          />
+          <div
+            v-else
+            class="h-10 w-10 rounded-full border-2 border-primary/20 bg-primary/10 flex items-center justify-center"
+          >
+            <span class="text-primary font-bold text-sm">
+              {{ user?.fullName?.charAt(0) ?? '?' }}
+            </span>
+          </div>
+          <!-- Loading shimmer -->
+          <div v-if="loading" class="absolute inset-0 rounded-full bg-gray-200 animate-pulse" />
+        </div>
 
-        <div>
-          <p class="font-semibold text-gray-800">Henry Vargas</p>
-          <p class="text-sm text-gray-500">Administrador</p>
+        <div class="min-w-0">
+          <p v-if="!loading" class="font-semibold text-gray-800 truncate">
+            {{ user?.fullName ?? '—' }}
+          </p>
+          <div v-else class="h-4 w-24 bg-gray-200 rounded animate-pulse mb-1" />
+          <p v-if="!loading" class="text-sm text-gray-500 truncate">
+            {{ user?.position ?? '' }}
+          </p>
+          <div v-else class="h-3 w-16 bg-gray-200 rounded animate-pulse" />
         </div>
       </div>
 
@@ -116,7 +140,6 @@ import { ref } from 'vue'
 import {
   Compass,
   ShoppingBag,
-  Users,
   MessageSquare,
   Calendar,
   User,
@@ -130,6 +153,9 @@ import {
   Briefcase,
   Blocks
 } from 'lucide-vue-next'
+
+const { user, loading, fetchUser } = useUser()
+onMounted(fetchUser)
 
 interface MenuItem {
   key: string

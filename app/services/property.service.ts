@@ -1,5 +1,5 @@
 import { useApi } from '../composables/useApi'
-import { Property } from '../types/property'
+import type { Property } from '../types/property'
 
 
 export const propertyService = {

@@ -51,6 +51,13 @@ export interface ApiActiveAdPagedResponse {
   currentPage: number
 }
 
+export interface ApiMyPropertiesPagedResponse {
+  data: ApiActiveAdItem[]
+  total: number
+  page: number
+  pageSize: number
+}
+
 // ============================================
 // UI Listing Type (card view)
 // ============================================
