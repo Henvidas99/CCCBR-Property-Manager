@@ -51,34 +51,44 @@
               v-show="openSection === section.title"
               class="flex flex-col space-y-2"
             >
-              <NuxtLink
-                v-for="item in section.items"
-                :key="item.key"
-                :to="item.link"
-                @mouseover="hoverItem = item.key"
-                @mouseleave="hoverItem = ''"
-                @click="activeKey = item.key"
-                :class="[
-                  'relative flex items-center px-3 py-1.5 rounded-2xl transition-all duration-300',
-                  getItemStyle(item.key)
-                ]"
-              >
-
-                <!-- ICON -->
-                <div
+              <template v-for="item in section.items" :key="item.key">
+                <!-- External link -->
+                <a
+                  v-if="item.external"
+                  :href="item.link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  @mouseover="hoverItem = item.key"
+                  @mouseleave="hoverItem = ''"
                   :class="[
-                    'flex items-center justify-center rounded-full h-9 w-9 transition-transform duration-300',
-                    getIconStyle(item.key)
+                    'relative flex items-center px-3 py-1.5 rounded-2xl transition-all duration-300',
+                    getItemStyle(item.key)
                   ]"
                 >
-                  <component :is="item.icon" class="h-5 w-5" />
-                </div>
+                  <div :class="['flex items-center justify-center rounded-full h-9 w-9 transition-transform duration-300', getIconStyle(item.key)]">
+                    <component :is="item.icon" class="h-5 w-5" />
+                  </div>
+                  <span class="ml-4 font-medium text-sm">{{ item.name }}</span>
+                </a>
 
-                <span class="ml-4 font-medium text-sm">
-                  {{ item.name }}
-                </span>
-
-              </NuxtLink>
+                <!-- Internal link -->
+                <NuxtLink
+                  v-else
+                  :to="item.link"
+                  @mouseover="hoverItem = item.key"
+                  @mouseleave="hoverItem = ''"
+                  @click="activeKey = item.key"
+                  :class="[
+                    'relative flex items-center px-3 py-1.5 rounded-2xl transition-all duration-300',
+                    getItemStyle(item.key)
+                  ]"
+                >
+                  <div :class="['flex items-center justify-center rounded-full h-9 w-9 transition-transform duration-300', getIconStyle(item.key)]">
+                    <component :is="item.icon" class="h-5 w-5" />
+                  </div>
+                  <span class="ml-4 font-medium text-sm">{{ item.name }}</span>
+                </NuxtLink>
+              </template>
             </div>
           </transition>
         </div>  
@@ -162,6 +172,7 @@ interface MenuItem {
   name: string
   link: string
   icon: any
+  external?: boolean
 }
 
 interface MenuSection {
@@ -186,7 +197,7 @@ const menu: MenuSection[] = [
     items: [
       { key: 'explorer', name: 'Explorador', link: '/explorer', icon: Compass },
       { key: 'portfolio', name: 'Portafolio', link: '/portfolio', icon: Briefcase  },
-      { key: 'marketplace', name: 'Marketplace', link: '/marketplace', icon: ShoppingBag }
+      { key: 'marketplace', name: 'Marketplace', link: 'https://cccbr-clasificados.vercel.app/', icon: ShoppingBag, external: true }
     ]
   },
 

@@ -2,7 +2,6 @@
 import type { ApiMyPropertiesPagedResponse, ApiActiveAdItem } from '~/types'
 
 const { request } = useApi()
-const config = useRuntimeConfig()
 
 // ── Pagination ────────────────────────────────────────────────────────────────
 
@@ -12,7 +11,7 @@ const itemsPerPage = 10
 // ── Authenticated fetch ───────────────────────────────────────────────────────
 
 const { data: rawData, error, pending } = await useAsyncData<ApiMyPropertiesPagedResponse>(
-  () => `portfolio-my-properties-${currentPage.value}`,
+  () => `portfolio-allies-properties-${currentPage.value}`,
   () => request<ApiMyPropertiesPagedResponse>(
     `/PropertyListing/my-properties?page=${currentPage.value}&pageSize=${itemsPerPage}`
   ),
@@ -121,21 +120,12 @@ const goToPage = (page: number) => {
       <!-- Header -->
       <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">Mi Portafolio</h1>
+          <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">De mis Aliados</h1>
           <p class="text-sm text-gray-500">
             <span v-if="!pending">{{ totalCount }} propiedad{{ totalCount !== 1 ? 'es' : '' }} registrada{{ totalCount !== 1 ? 's' : '' }}</span>
             <span v-else>Cargando...</span>
           </p>
         </div>
-        <NuxtLink
-          to="/portfolio/new"
-          class="inline-flex items-center gap-2 px-4 py-2.5 bg-[#202d59] hover:bg-[#a31e22] text-white text-sm font-semibold rounded-xl shadow-sm transition-colors self-start sm:self-auto"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Nueva propiedad
-        </NuxtLink>
       </div>
 
       <!-- Skeleton while loading -->
@@ -252,19 +242,10 @@ const goToPage = (page: number) => {
       <!-- Empty state -->
       <div v-else-if="!pending" class="text-center py-16">
         <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Sin propiedades aún</h3>
-        <p class="text-gray-500 mb-6">Agrega tu primera propiedad para comenzar.</p>
-        <NuxtLink
-          to="/portfolio/new"
-          class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#202d59] hover:bg-[#a31e22] text-white text-sm font-semibold rounded-xl transition-colors"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Nueva propiedad
-        </NuxtLink>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Sin propiedades de aliados</h3>
+        <p class="text-gray-500 mb-6">No hay propiedades de tus aliados aún.</p>
       </div>
 
       <!-- Pagination -->

@@ -17,8 +17,9 @@ const isEmoji = (str: string) => {
 </script>
 
 <template>
-  <div
-    class="bg-white rounded-xl overflow-hidden shadow-md transition-all hover:-translate-y-1 hover:shadow-xl cursor-pointer relative"
+  <NuxtLink
+    :to="`/explorer/${listing.id}`"
+    class="block bg-white rounded-xl overflow-hidden shadow-md transition-all hover:-translate-y-1 hover:shadow-xl cursor-pointer relative"
   >
     <!-- Image -->
     <div class="relative w-full h-56 bg-gray-200 overflow-hidden">
@@ -91,5 +92,5 @@ const isEmoji = (str: string) => {
         </span>
       </div>
     </div>
-  </div>
+  </NuxtLink>
 </template>
