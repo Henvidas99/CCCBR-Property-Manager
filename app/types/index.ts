@@ -53,6 +53,7 @@ export interface ApiActiveAdItem {
   updatedDate: string | null
   score: number | null
   viewCount: number
+  activeAdId: number | null
 }
 
 export interface ApiActiveAdPagedResponse {
@@ -91,4 +92,5 @@ export interface Listing {
   publisherName?: string
   publisherImage?: string
   publishedTimeAgo?: string
+  activeAdId?: number | null
 }

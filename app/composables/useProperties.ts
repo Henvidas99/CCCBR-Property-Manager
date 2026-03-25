@@ -36,6 +36,7 @@ export const mapApiPropertyToListing = (ad: ApiActiveAdItem): Listing => {
     publisherName: ad.userFullName || 'Agente',
     publisherImage: undefined,
     publishedTimeAgo: undefined,
+    activeAdId: ad.activeAdId ?? null,
   }
 }
 

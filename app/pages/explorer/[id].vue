@@ -47,6 +47,10 @@ const visibilityLabel: Record<string, { label: string; class: string }> = {
 const getVisibility = (v: string) =>
   visibilityLabel[v?.toLowerCase()] ?? { label: v ?? '—', class: 'bg-gray-100 text-gray-500' }
 
+const goToMarketplace = (adId: number) => {
+  window.open(`https://cccbr-clasificados.vercel.app/clasificados/${adId}`, '_blank', 'noopener')
+}
+
 // ── Photo carousel ────────────────────────────────────────────────────────────
 
 const photos = computed(() => property.value ? getPhotos(property.value) : [])
@@ -162,6 +166,16 @@ watch(photos, () => { activePhoto.value = 0 })
                 {{ getVisibility(property.visibility).label }}
               </span>
               <span v-if="property.code" class="text-xs font-mono text-gray-400 ml-auto">{{ property.code }}</span>
+              <button
+                v-if="property.activeAdId != null"
+                @click="goToMarketplace(property.activeAdId!)"
+                class="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#00cfe5] text-[#202d59] hover:bg-[#00b8cc] transition-colors shadow-sm"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Ver anuncio
+              </button>
             </div>
 
             <h1 class="text-2xl font-bold text-gray-900 mb-1">{{ property.title }}</h1>
