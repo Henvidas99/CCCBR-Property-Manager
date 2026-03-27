@@ -9,7 +9,11 @@ const { data: property, error, pending } = await useAsyncData<ApiActiveAdItem>(
   `explorer-property-${id}`,
   () => request<ApiActiveAdItem>(`/PropertyListing/get-property/${id}`)
 )
+const router = useRouter()
 
+function goToPreviousPage() {
+  router.back()
+}
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const getPhotos = (item: ApiActiveAdItem): string[] => {
@@ -74,7 +78,12 @@ watch(photos, () => { activePhoto.value = 0 })
         </svg>
         <h3 class="text-lg font-semibold text-gray-900 mb-2">No se pudo cargar la propiedad</h3>
         <p class="text-gray-500 mb-4">{{ error.message }}</p>
-        <NuxtLink to="/explorer" class="text-[#202d59] hover:underline text-sm font-medium">← Volver al explorador</NuxtLink>
+       <button @click="goToPreviousPage" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#202d59] transition-colors mb-4">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Volver al explorador
+      </button>
       </div>
     </div>
 
@@ -93,12 +102,12 @@ watch(photos, () => { activePhoto.value = 0 })
     <div v-else-if="property" class="w-full px-4 sm:px-6 lg:px-8 py-6 max-w-5xl mx-auto">
 
       <!-- Back link -->
-      <NuxtLink to="/explorer" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#202d59] transition-colors mb-4">
+      <button @click="goToPreviousPage" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#202d59] transition-colors mb-4">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
         Volver al explorador
-      </NuxtLink>
+      </button>
 
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 

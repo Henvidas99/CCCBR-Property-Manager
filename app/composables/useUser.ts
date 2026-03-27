@@ -2,6 +2,7 @@ import { userService, type UserProfile } from '~/services/user.service'
 
 export const useUser = () => {
   const user = useState<UserProfile | null>('current_user', () => null)
+  const users = useState<UserProfile[]>('all_users', () => [])
   const loading = ref(false)
 
   const fetchUser = async () => {
@@ -16,5 +17,16 @@ export const useUser = () => {
     }
   }
 
-  return { user, loading, fetchUser }
+  const fetchAllUsers = async () => {
+    loading.value = true
+    try {
+      users.value = await userService.getAllUsers()
+    } catch {
+      users.value = []
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { user, loading, fetchUser, fetchAllUsers, users }
 }

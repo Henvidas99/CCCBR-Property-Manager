@@ -49,7 +49,7 @@
             </span>
           </div>
           <p v-if="group.description" class="d-desc">{{ group.description }}</p>
-          <p class="d-members">{{ group.members?.filter(m => !m.hasLeft).length ?? 0 }} miembros</p>
+          <p class="d-members">{{ group.memberCount }} miembros</p>
         </div>
 
         <!-- Action -->
@@ -106,8 +106,9 @@
 <script setup lang="ts">
 import type { Chat } from '~/composables/useChats'
 import { useChats } from '~/composables/useChats'
+import type { DiscorableGroupDto } from '~/services/chat.service';
 
-const props = defineProps<{ availableGroups: Chat[]; loading?: boolean }>()
+const props = defineProps<{ availableGroups: DiscorableGroupDto[]; loading?: boolean }>()
 const emit = defineEmits(['joined', 'requested'])
 
 const { joinPublicGroup, requestJoin } = useChats()
@@ -115,7 +116,7 @@ const { joinPublicGroup, requestJoin } = useChats()
 const search = ref('')
 const joiningId = ref<string | null>(null)
 const requestedIds = ref<Set<string>>(new Set())
-const confirmGroup = ref<Chat | null>(null)
+const confirmGroup = ref<DiscorableGroupDto | null>(null)
 
 const filtered = computed(() =>
   search.value
@@ -131,7 +132,7 @@ function groupColor(name: string) {
   return colors[idx]
 }
 
-function handleJoin(group: Chat) {
+function handleJoin(group: DiscorableGroupDto) {
   confirmGroup.value = group
 }
 

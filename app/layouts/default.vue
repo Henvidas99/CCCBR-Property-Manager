@@ -31,7 +31,7 @@
       <AppNavbar @toggle-mobile-sidebar="mobileSidebarOpen = !mobileSidebarOpen" />
 
       <!-- Contenido principal -->
-      <main class="p-6 overflow-auto">
+      <main class="p-6 overflow-auto" style="height: 100vh;">
         <slot />
       </main>
     </div>

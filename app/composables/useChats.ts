@@ -1,8 +1,6 @@
 // composables/useChats.ts
-import type { UUID } from 'node:crypto'
-import { chatService, type Chat, type ChatMessage, type JoinRequest, type UnreadCounts } from '~/services/chat.service'
+import { chatService, type Chat, type ChatMessage, type DiscorableGroupDto, type UnreadCounts } from '~/services/chat.service'
 import { chatSocketService } from '~/services/chat.socket.service'
-
 
 export type { Chat, ChatMessage, ChatMember, MessageAttachment, JoinRequest } from '~/services/chat.service'
 
@@ -10,6 +8,7 @@ export type { Chat, ChatMessage, ChatMember, MessageAttachment, JoinRequest } fr
 const useChatsState = () => ({
   chats: useState<Chat[]>('chats_list', () => []),
   activeChat: useState<Chat | null>('chats_active', () => null),
+  discoverableGroups: useState<DiscorableGroupDto[]>('chats_discoverable', () => []),
   messages: useState<Record<string, ChatMessage[]>>('chats_messages', () => ({})),
   cursors: useState<Record<string, string | null>>('chats_cursors', () => ({})),
   hasMore: useState<Record<string, boolean>>('chats_has_more', () => ({})),
@@ -17,7 +16,9 @@ const useChatsState = () => ({
   onlineUsers: useState<Set<number>>('chats_online', () => new Set()),
   typingUsers: useState<Record<string, number[]>>('chats_typing', () => ({})),
   loadingChats: useState<boolean>('chats_loading', () => false),
+  loadingDiscoverable: useState<boolean>('chats_loading_discoverable', () => false),
   loadingMessages: useState<boolean>('chats_loading_msgs', () => false),
+  loadingSendMessage: useState<boolean>('chats_loading_send', () => false),
   wsConnected: useState<boolean>('chats_ws', () => false),
 })
 
@@ -27,6 +28,8 @@ export const useChats = () => {
     chats, activeChat, messages, cursors, hasMore,
     unreadCounts, onlineUsers, typingUsers,
     loadingChats, loadingMessages, wsConnected,
+    loadingDiscoverable, discoverableGroups,
+    loadingSendMessage,
   } = state
 
   // ─── Computed ───────────────────────────────────────────────────────────────
@@ -44,6 +47,15 @@ export const useChats = () => {
     activeChat.value ? (typingUsers.value[activeChat.value.id] ?? []) : []
   )
 
+  const allUserTyping = computed(() => {
+    const typing = [] as { chatId: string; userId: number }[]
+    for (const chatId in typingUsers.value) {
+      const userIds = typingUsers.value[chatId]
+      userIds?.forEach(userId => typing.push({ chatId, userId }))
+    }
+    return typing
+  })
+
   // ─── WebSocket setup ────────────────────────────────────────────────────────
 
   function connectSocket(token: string) {
@@ -53,16 +65,21 @@ export const useChats = () => {
       onConnect: () => { wsConnected.value = true },
       onDisconnect: () => { wsConnected.value = false },
 
-      // Nuevo mensaje → insertarlo en la lista y actualizar lastMessage del chat
       onNewMessage: (msg: ChatMessage) => {
         const chatMsgs = messages.value[msg.chatId] ?? []
-        if (!chatMsgs.find(m => m.id === msg.id)) {
+        const withoutTemp = chatMsgs.filter(m => {
+          if (!m.id.startsWith('temp_')) return true
+          const timeDiff = Math.abs(new Date(msg.createdAt).getTime() - new Date(m.createdAt).getTime())
+          return !(m.content === msg.content && m.chatId === msg.chatId && timeDiff < 10000)
+        })
+        if (!withoutTemp.find(m => m.id === msg.id)) {
           messages.value = {
             ...messages.value,
-            [msg.chatId]: [...chatMsgs, msg],
+            [msg.chatId]: [...withoutTemp, msg],
           }
+        } else {
+          messages.value = { ...messages.value, [msg.chatId]: withoutTemp }
         }
-        // Actualizar lastMessage en la lista
         chats.value = chats.value.map(c =>
           c.id === msg.chatId ? { ...c, lastMessage: msg } : c
         )
@@ -105,7 +122,6 @@ export const useChats = () => {
         const next = new Set(onlineUsers.value)
         next.add(Number(userId))
         onlineUsers.value = next
-        // Actualizar estado online en chats directos
         chats.value = chats.value.map(c => {
           if (c.type === 'direct') {
             const hasUser = c.members.some(m => m.userId === Number(userId))
@@ -160,7 +176,6 @@ export const useChats = () => {
 
       onJoinRequestResponse: ({ chatId, status }) => {
         if (status === 'accepted') {
-          // Refrescar lista de chats para incluir el nuevo grupo
           fetchChats()
         }
       },
@@ -180,7 +195,6 @@ export const useChats = () => {
       const result = await chatService.getMyChats()
       chats.value = result
 
-      // Inicializar unread counts desde la respuesta
       const counts: UnreadCounts = {}
       result.forEach(c => { counts[c.id] = c.unreadCount })
       unreadCounts.value = counts
@@ -188,6 +202,18 @@ export const useChats = () => {
       console.error('[useChats] fetchChats error', e)
     } finally {
       loadingChats.value = false
+    }
+  }
+
+  async function fetchDiscoverableGroups() {
+    loadingDiscoverable.value = true
+    try {
+      const result = await chatService.getDiscoverableGroups()
+      discoverableGroups.value = result
+    } catch (e) {
+      console.error('[useChats] fetchDiscoverableGroups error', e)
+    } finally {
+      loadingDiscoverable.value = false
     }
   }
 
@@ -237,18 +263,18 @@ export const useChats = () => {
     chatSocketService.joinChat(chat.id)
   }
 
-  async function sendMessage(chatId: string, content: string, files: File[] = [], replyToId?: string) {
+  async function sendMessage(chatId: string, content: string, files: File[] = [], replyToId?: string, currentUser?: { id: number; fullName: string; photo: string; email: string, lastSeenAt: string | null }) {
+    loadingSendMessage.value = true
+    const tempId = `temp_${Date.now()}`
     try {
-      // Optimistic update — mensaje temporal mientras llega el WS
-      const tempId = `temp_${Date.now()}`
       const tempMsg: ChatMessage = {
         id: tempId,
         content,
-        senderId: 0, // se reemplaza cuando llega el evento WS
+        senderId: currentUser?.id ?? -1,
         chatId,
         replyToId: replyToId ?? null,
         replyTo: null,
-        sender: { id: 0, fullName: 'Tú', photo: '', email: '' },
+        sender: currentUser ?? { id: -1, fullName: 'Tú', photo: '', email: '', lastSeenAt: null },
         attachments: [],
         reads: [],
         isEdited: false,
@@ -257,26 +283,12 @@ export const useChats = () => {
         updatedAt: new Date().toISOString(),
       }
 
-      messages.value = {
-        ...messages.value,
-        [chatId]: [...(messages.value[chatId] ?? []), tempMsg],
-      }
-
-      // Enviar al servidor (el evento WS new_message reemplazará el temp)
       await chatService.sendMessage(chatId, { content, replyToId, files })
 
-      // Limpiar el temp (el WS event llegará con el real)
-      messages.value = {
-        ...messages.value,
-        [chatId]: (messages.value[chatId] ?? []).filter(m => m.id !== tempId),
-      }
     } catch (e) {
       console.error('[useChats] sendMessage error', e)
-      // Revertir optimistic
-      messages.value = {
-        ...messages.value,
-        [chatId]: (messages.value[chatId] ?? []).filter(m => !m.id.startsWith('temp_')),
-      }
+    }finally {
+      loadingSendMessage.value = false
     }
   }
 
@@ -377,6 +389,15 @@ export const useChats = () => {
     }
   }
 
+  async function GetOnlineUsers() {
+    try {      
+      const online = await chatService.getOnlineUsers()
+      onlineUsers.value = new Set(online.onlineUsers)
+    } catch (e) {
+      console.error('[useChats] onlineUsers error', e)
+    }
+  }
+
   function sendTyping(chatId: string) {
     chatSocketService.sendTyping(chatId)
   }
@@ -396,10 +417,14 @@ export const useChats = () => {
     messages,
     loadingChats,
     loadingMessages,
+    loadingSendMessage,
     wsConnected,
     onlineUsers,
     typingUsers,
     unreadCounts,
+    discoverableGroups,
+    loadingDiscoverable,
+    hasMore,
 
     // Computed
     allChats,
@@ -408,6 +433,7 @@ export const useChats = () => {
     totalUnread,
     activeChatMessages,
     activeChatTyping,
+    allUserTyping,
 
     // Methods
     connectSocket,
@@ -428,5 +454,7 @@ export const useChats = () => {
     sendTyping,
     isOnline,
     getChatUnread,
+    fetchDiscoverableGroups,
+    GetOnlineUsers
   }
 }

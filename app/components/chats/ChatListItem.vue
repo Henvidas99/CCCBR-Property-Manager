@@ -8,7 +8,7 @@
         <span class="item-time">{{ formattedTime }}</span>
       </div>
       <div class="item-bottom">
-        <span class="item-preview">{{ previewText }}</span>
+        <span class="item-preview">{{ isTyping ? chat.type === 'group' ? `${allUserTyping.filter(t => t.chatId === props.chat.id && t.userId !== user?.id).length} personas escribiendo...` : 'Escribiendo...' : previewText }}</span>
         <span v-if="unread > 0" class="unread-badge">{{ unread > 99 ? '99+' : unread }}</span>
       </div>
     </div>
@@ -24,11 +24,11 @@ import ChatAvatar from './ChatAvatar.vue'
 const props = defineProps<{ chat: Chat; isActive: boolean }>()
 defineEmits(['select'])
 
-const { getChatUnread } = useChats()
+const { getChatUnread, GetOnlineUsers, allUserTyping } = useChats()
 const { user } = useUser()
 
 const unread = computed(() => getChatUnread(props.chat.id))
-
+const isTyping = computed(() => allUserTyping.value.some(t => t.chatId === props.chat.id && t.userId !== user.value?.id))
 const displayName = computed(() => {
   if (props.chat.type === 'group') return props.chat.name ?? 'Grupo'
   // Para DM mostrar el nombre del otro usuario
@@ -60,6 +60,13 @@ const formattedTime = computed(() => {
   if (diffDays === 1) return 'Ayer'
   if (diffDays < 7) return date.toLocaleDateString('es', { weekday: 'short' })
   return date.toLocaleDateString('es', { day: '2-digit', month: '2-digit' })
+})
+
+onMounted(() => {
+  if (props.chat.type === 'direct') {
+    const otherId = props.chat.members?.find(m => m.userId !== user.value?.id)?.userId
+    if (otherId) GetOnlineUsers() 
+  }
 })
 </script>
 

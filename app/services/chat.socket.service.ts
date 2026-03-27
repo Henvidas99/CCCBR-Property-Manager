@@ -126,10 +126,6 @@ class ChatSocketService {
     this.socket?.emit(WS_EVENTS.LEAVE_CHAT, { chatId })
   }
 
-  /**
-   * Emite typing_start. Automáticamente emite typing_stop después de 2.5s
-   * si no se vuelve a llamar (debounce integrado).
-   */
   sendTyping(chatId: string) {
     this.socket?.emit(WS_EVENTS.TYPING_START, { chatId })
 
@@ -139,7 +135,7 @@ class ChatSocketService {
     const timer = setTimeout(() => {
       this.socket?.emit(WS_EVENTS.TYPING_STOP, { chatId })
       this.typingTimers.delete(chatId)
-    }, 2500)
+    }, 1000)
 
     this.typingTimers.set(chatId, timer)
   }
@@ -162,5 +158,4 @@ class ChatSocketService {
   }
 }
 
-// Singleton — una sola instancia para toda la app
 export const chatSocketService = new ChatSocketService()

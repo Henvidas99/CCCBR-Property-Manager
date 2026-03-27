@@ -7,6 +7,7 @@ export interface ChatUser {
   fullName: string
   photo: string
   email: string
+  lastSeenAt: string | null
 }
 
 export interface ChatMember {
@@ -61,6 +62,15 @@ export interface Chat {
   updatedAt: string
 }
 
+export interface DiscorableGroupDto {
+  id: string
+  name: string
+  description: string | null
+  avatarUrl: string | null
+  privacy: 'public' | 'private'
+  memberCount: number
+}
+
 export interface JoinRequest {
   id: string
   chatId: string
@@ -90,6 +100,11 @@ export const chatService = {
   async getMyChats(): Promise<Chat[]> {
     const { request } = useApi()
     return request<Chat[]>('/chats')
+  },
+
+  async getDiscoverableGroups(): Promise<DiscorableGroupDto[]> {
+    const { request } = useApi()
+    return request<DiscorableGroupDto[]>('/chats/discover')
   },
 
   async createDirectChat(targetUserId: number): Promise<Chat> {
@@ -136,9 +151,9 @@ export const chatService = {
     })
   },
 
-  async getOnlineUsers(): Promise<{ onlineUsers: string[] }> {
+  async getOnlineUsers(): Promise<{ onlineUsers: number[] }> {
     const { request } = useApi()
-    return request<{ onlineUsers: string[] }>('/chats/online/users')
+    return request<{ onlineUsers: number[] }>('/chats/online/users')
   },
 
   async isUserOnline(userId: number): Promise<{ userId: number; isOnline: boolean }> {

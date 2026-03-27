@@ -15,12 +15,12 @@
         <span class="detail-sub">
           <template v-if="chat.type === 'direct'">
             <span :class="['status-dot', isOtherOnline ? 'online' : 'offline']"/>
-            {{ isOtherOnline ? 'En línea' : `Visto ${lastSeenText}` }}
+            {{ isOtherOnline ? 'En línea' : lastSeenText }}
           </template>
           <template v-else>
             {{ activeMembers }} miembros
             <template v-if="typingInChat.length > 0">
-              · <span class="typing-indicator">escribiendo…</span>
+              · <span class="typing-indicator">alguien está escribiendo…</span>
             </template>
           </template>
         </span>
@@ -153,13 +153,12 @@
       <GroupInfoPanel
         v-if="chat.type === 'group'"
         v-model="showInfo"
-        :chat="chat"
-        @set-admin="(uid) => emit('set-admin', uid)"
-        @demote-admin="(uid) => emit('demote-admin', uid)"
-        @remove-member="(uid) => emit('remove-member', uid)"
+        :chat="localChat"
+        @set-admin="handleSetAdmin"
+        @demote-admin="handleDemoteAdmin"
+        @remove-member="handleRemoveMember"
         @leave="emit('leave')"
-        @accept-request="handleAcceptRequest"
-        @reject-request="handleRejectRequest"
+        @chat-updated="handleChatUpdated"
         ref="infoPanelRef"
       />
     </div>
@@ -219,8 +218,9 @@
         @input="onTyping"
       />
 
-      <button class="send-btn" :disabled="!canSend" @click="send">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <button class="send-btn" :disabled="!canSend || loadingSendMessage" @click="send">
+        <div v-if="loadingSendMessage" class="send-spinner"/>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
         </svg>
       </button>
@@ -231,6 +231,29 @@
       <Transition name="modal-fade">
         <div v-if="lightboxUrl" class="lightbox" @click="lightboxUrl = null">
           <img :src="lightboxUrl" class="lightbox-img"/>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Delete confirmation dialog -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div v-if="deleteDialog.show" class="dialog-backdrop" @click.self="deleteDialog.show = false">
+          <Transition name="dialog-pop">
+            <div v-if="deleteDialog.show" class="dialog-box">
+              <div class="dialog-icon danger">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </div>
+              <h4 class="dialog-title">Eliminar mensaje</h4>
+              <p class="dialog-msg">¿Seguro que quieres eliminar este mensaje? Esta acción no se puede deshacer.</p>
+              <div class="dialog-actions">
+                <button class="dialog-cancel" @click="deleteDialog.show = false">Cancelar</button>
+                <button class="dialog-confirm danger" @click="doDelete">Eliminar</button>
+              </div>
+            </div>
+          </Transition>
         </div>
       </Transition>
     </Teleport>
@@ -245,14 +268,24 @@ import { useUser } from '~/composables/useUser'
 import { chatService } from '~/services/chat.service'
 import ChatAvatar from './ChatAvatar.vue'
 import GroupInfoPanel from './GroupInfoPanel.vue'
+import { formatLastSeenAt } from '~/helpers/global.helpers'
 
 const props = defineProps<{ chat: Chat; showBack?: boolean }>()
 const emit = defineEmits(['back', 'set-admin', 'demote-admin', 'remove-member', 'leave'])
 
-const { activeChatMessages, activeChatTyping, loadingMessages, fetchMessages, sendMessage, editMessage, deleteMessage, sendTyping, isOnline } = useChats()
+const {
+  activeChatMessages, activeChatTyping, loadingMessages,
+  fetchMessages, sendMessage, editMessage, deleteMessage,
+  sendTyping, isOnline, loadingSendMessage, refreshChat,
+  selectChat, hasMore
+} = useChats()
 const { user } = useUser()
 
 const currentUserId = computed(() => user.value?.id)
+
+// Local copy of chat so we can reactively update avatar/name without waiting for ws
+const localChat = ref<Chat>({ ...props.chat })
+watch(() => props.chat, (val) => { localChat.value = { ...val } }, { deep: true })
 
 const scrollEl = ref<HTMLElement | null>(null)
 const inputEl = ref<HTMLInputElement | null>(null)
@@ -266,19 +299,24 @@ const lightboxUrl = ref<string | null>(null)
 const attachmentFiles = ref<File[]>([])
 const previewUrls = ref<string[]>([])
 
+const deleteDialog = ref({ show: false, msgId: '' })
+
 const chatMessages = computed(() => activeChatMessages.value)
 const typingInChat = computed(() => activeChatTyping.value)
-const hasMoreMessages = computed(() => false) // se actualiza con el composable
+const hasMoreMessages = computed(() => hasMore.value[props.chat.id] ?? false)
+
 const displayName = computed(() => {
-  if (props.chat.type === 'group') return props.chat.name ?? 'Grupo'
-  const other = props.chat.members?.find(m => m.userId !== currentUserId.value)
-  return other?.user?.fullName ?? props.chat.name ?? 'Chat'
+  if (localChat.value.type === 'group') return localChat.value.name ?? 'Grupo'
+  const other = localChat.value.members?.find(m => m.userId !== currentUserId.value)
+  return other?.user?.fullName ?? localChat.value.name ?? 'Chat'
 })
-const activeMembers = computed(() => props.chat.members?.filter(m => !m.hasLeft).length ?? 0)
-const otherMember = computed(() => props.chat.members?.find(m => m.userId !== currentUserId.value))
+const activeMembers = computed(() => localChat.value.members?.filter(m => !m.hasLeft).length ?? 0)
+const otherMember = computed(() => localChat.value.members?.find(m => m.userId !== currentUserId.value))
 const isOtherOnline = computed(() => otherMember.value ? isOnline(otherMember.value.userId) : false)
-const lastSeenText = computed(() => 'hace un momento') // se puede conectar al estado WS
-const isCurrentUserAdmin = computed(() => props.chat.members?.some(m => m.userId === currentUserId.value && m.role === 'admin') ?? false)
+const lastSeenText = computed(() => formatLastSeenAt(otherMember.value?.user.lastSeenAt))
+const isCurrentUserAdmin = computed(() =>
+  localChat.value.members?.some(m => m.userId === currentUserId.value && m.role === 'admin') ?? false
+)
 const canSend = computed(() => draft.value.trim() || attachmentFiles.value.length > 0)
 
 function canDelete(msg: ChatMessage) {
@@ -320,13 +358,11 @@ function onTyping() {
 
 async function send() {
   if (!canSend.value) return
-
   if (editingMsg.value) {
     await editMessage(props.chat.id, editingMsg.value.id, draft.value)
     cancelEdit()
     return
   }
-
   await sendMessage(props.chat.id, draft.value, attachmentFiles.value, replyTo.value?.id)
   draft.value = ''
   replyTo.value = null
@@ -346,9 +382,13 @@ function cancelEdit() {
   draft.value = ''
 }
 
-async function confirmDelete(msgId: string) {
-  if (!confirm('¿Eliminar este mensaje?')) return
-  await deleteMessage(props.chat.id, msgId)
+function confirmDelete(msgId: string) {
+  deleteDialog.value = { show: true, msgId }
+}
+
+async function doDelete() {
+  await deleteMessage(props.chat.id, deleteDialog.value.msgId)
+  deleteDialog.value.show = false
 }
 
 function loadMore() {
@@ -371,14 +411,42 @@ function removeFile(idx: number) {
 
 function openMedia(url: string) { lightboxUrl.value = url }
 
-async function handleAcceptRequest(requestId: string) {
-  await chatService.respondJoinRequest(props.chat.id, requestId, 'accepted')
-  infoPanelRef.value?.refreshRequests()
+// ── Admin actions (with optimistic local update + server refresh) ──────
+async function handleSetAdmin(userId: number) {
+  try {
+    await chatService.setAdmin(props.chat.id, userId)
+    await refreshChat(props.chat.id)
+  } catch (e) {
+    console.error('[ChatDetail] setAdmin error', e)
+  }
 }
 
-async function handleRejectRequest(requestId: string) {
-  await chatService.respondJoinRequest(props.chat.id, requestId, 'rejected')
-  infoPanelRef.value?.refreshRequests()
+async function handleDemoteAdmin(userId: number) {
+  try {
+    await chatService.demoteAdmin(props.chat.id, userId)
+    await refreshChat(props.chat.id)
+  } catch (e) {
+    console.error('[ChatDetail] demoteAdmin error', e)
+  }
+}
+
+async function handleRemoveMember(userId: number) {
+  try {
+    await chatService.removeMember(props.chat.id, userId)
+    await refreshChat(props.chat.id)
+  } catch (e) {
+    console.error('[ChatDetail] removeMember error', e)
+  }
+}
+
+// Called when GroupInfoPanel updates avatar or info
+async function handleChatUpdated(updatedChat: Chat | null) {
+  // If we got the updated chat object directly, use it; otherwise fetch from server
+  if (updatedChat) {
+    localChat.value = updatedChat
+  }
+  // Always refresh the global state so sidebar etc. get updated
+  await refreshChat(props.chat.id)
 }
 
 function scrollToBottom(smooth = false) {
@@ -389,7 +457,13 @@ function scrollToBottom(smooth = false) {
   })
 }
 
-watch(() => chatMessages.value.length, () => scrollToBottom(true))
+onMounted(() => scrollToBottom())
+watch(() => props.chat.id, async (id) => {
+  if (id) {
+    await selectChat(props.chat)
+  }
+}, { immediate: true })
+watch(() => chatMessages.value.length, () => scrollToBottom())
 watch(() => props.chat.id, () => { prevDate = ''; scrollToBottom() })
 </script>
 
@@ -461,6 +535,7 @@ watch(() => props.chat.id, () => { prevDate = ''; scrollToBottom() })
 .bubble-time { display: block; font-size: 0.65rem; margin-top: 4px; opacity: 0.6; text-align: right; }
 .bubble-mine .bubble-time { color: rgba(255,255,255,0.7); }
 .bubble-theirs .bubble-time { color: #b0b3b8; }
+.send-spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
 
 /* Attachments */
 .attachments-grid { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
@@ -516,6 +591,20 @@ watch(() => props.chat.id, () => { prevDate = ''; scrollToBottom() })
 .lightbox { position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
 .lightbox-img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
 
+/* Delete dialog */
+.dialog-backdrop { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dialog-box { width: 340px; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; font-family: 'DM Sans', sans-serif; }
+.dialog-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.dialog-icon.danger { background: #fee2e2; color: #dc2626; }
+.dialog-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; color: #1c1e21; margin: 0; }
+.dialog-msg { font-size: 0.85rem; color: #65676b; line-height: 1.5; margin: 0; }
+.dialog-actions { display: flex; gap: 8px; width: 100%; margin-top: 4px; }
+.dialog-cancel { flex: 1; padding: 9px; border-radius: 10px; border: 1.5px solid #e4e6ea; background: transparent; color: #65676b; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+.dialog-cancel:hover { background: #f0f2f5; }
+.dialog-confirm { flex: 1; padding: 9px; border-radius: 10px; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+.dialog-confirm.danger { background: #dc2626; color: #fff; }
+.dialog-confirm.danger:hover { background: #b91c1c; }
+
 /* Transitions */
 .msg-enter-active { animation: msgIn 0.2s ease; }
 @keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
@@ -526,4 +615,7 @@ watch(() => props.chat.id, () => { prevDate = ''; scrollToBottom() })
 @keyframes replyIn { from { opacity: 0; transform: translateY(8px); } }
 .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s; }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+.dialog-pop-enter-active { animation: popIn 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+.dialog-pop-leave-active { animation: popIn 0.15s ease reverse; }
+@keyframes popIn { from { opacity: 0; transform: scale(0.9); } }
 </style>

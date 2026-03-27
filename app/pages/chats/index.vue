@@ -27,10 +27,10 @@
       <div class="sidebar-tabs">
         <button v-for="tab in tabs" :key="tab.key"
           :class="['s-tab', activeTab === tab.key && 'active']"
-          @click="activeTab = tab.key as 'all' | 'groups' | 'discover'">
+          @click="activeTab = tab.key as any">
           {{ tab.label }}
-          <span v-if="tab.key !== 'discover' && tabUnread(tab.key as 'all' | 'groups') > 0" class="s-badge">
-            {{ tabUnread(tab.key as 'all' | 'groups') }}
+          <span v-if="tab.key !== 'discover' && tabUnread(tab.key as any) > 0" class="s-badge">
+            {{ tabUnread(tab.key as any) }}
           </span>
         </button>
       </div>
@@ -57,7 +57,7 @@
 
       <!-- Discover tab -->
       <div v-else class="sidebar-list no-padding">
-        <DiscoverGroups :available-groups="discoverGroups" :loading="loadingDiscover"
+        <DiscoverGroups :available-groups="discoverableGroups" :loading="loadingDiscoverable"
           @joined="onJoined" @requested="onRequested"/>
       </div>
     </aside>
@@ -89,6 +89,7 @@
       </Transition>
     </main>
   </div>
+  <NewChatModal v-model="showNewChat" @chat-opened="handleChatOpened"/>
 </template>
 
 <script setup lang="ts">
@@ -99,17 +100,17 @@ import { chatService, type Chat } from '~/services/chat.service'
 import ChatListItem from '../../components/chats/ChatListItem.vue'
 import ChatDetail from '../../components/chats/ChatDetail.vue'
 import DiscoverGroups from '../../components/chats/DiscoverGroups.vue'
+import NewChatModal from '../../components/chats/NewChatModal.vue'
 
 const {
   allChats, groupChats, activeChat, loadingChats,
+  discoverableGroups, loadingDiscoverable, fetchDiscoverableGroups,
   selectChat, fetchChats, connectSocket, disconnectSocket, leaveGroup,
 } = useChats()
 const { user } = useUser()
 
 const search = ref('')
 const activeTab = ref<'all' | 'groups' | 'discover'>('all')
-const discoverGroups = ref<Chat[]>([])
-const loadingDiscover = ref(false)
 const showNewChat = ref(false)
 
 const tabs = [
@@ -139,20 +140,6 @@ async function handleLeave() {
   await leaveGroup(activeChat.value.id)
 }
 
-async function loadDiscoverGroups() {
-  loadingDiscover.value = true
-  try {
-    const myIds = new Set(allChats.value.map(c => c.id))
-    // Idealmente habría un endpoint GET /chats/public-groups
-    // Por ahora re-usamos getMyChats y filtramos
-    const result = await chatService.getMyChats()
-    discoverGroups.value = result.filter(c => c.type === 'group' && !myIds.has(c.id))
-  } finally {
-    loadingDiscover.value = false
-  }
-}
-
-watch(activeTab, val => { if (val === 'discover') loadDiscoverGroups() })
 
 function onJoined(group: Chat) {
   activeTab.value = 'all'
@@ -161,10 +148,15 @@ function onJoined(group: Chat) {
 
 function onRequested(_group: Chat) {}
 
+function handleChatOpened(chat: Chat) {
+  activeTab.value = 'all'
+}
+
 onMounted(async () => {
   await fetchChats()
+  await fetchDiscoverableGroups()
   // Conectar WebSocket con el token del usuario
-  const token = localStorage.getItem('auth_token')
+  const token = useCookie('auth_token').value ?? ''
   if (token) connectSocket(token)
 })
 
@@ -176,7 +168,7 @@ useSeoMeta({ title: 'Chats — CCCBR Manager' })
 </script>
 
 <style scoped>
-.chats-page { display: flex; height: 100vh; background: #f0f2f5; font-family: 'DM Sans', sans-serif; overflow: hidden; }
+.chats-page { display: flex; height: 100%; background: #f0f2f5; font-family: 'DM Sans', sans-serif; overflow: hidden; }
 
 /* Sidebar */
 .sidebar { width: 320px; flex-shrink: 0; background: #fff; border-right: 1px solid #eaecef; display: flex; flex-direction: column; overflow: hidden; }
@@ -226,4 +218,4 @@ useSeoMeta({ title: 'Chats — CCCBR Manager' })
   .sidebar { width: 100%; }
   .main-area { display: none; }
 }
-</style>
+</style>  

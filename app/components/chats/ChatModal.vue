@@ -19,6 +19,11 @@
                     </NuxtLink>
                     <span class="tooltip">Ver completo</span>
                   </div>
+                  <button class="icon-btn" title="Nuevo chat" @click="showNewChat = true">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
                   <button class="icon-btn" @click="$emit('update:modelValue', false)">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -53,7 +58,7 @@
                     <p>Sin chats</p>
                   </div>
                 </template>
-                <DiscoverGroups v-else :available-groups="discoverGroups" :loading="loadingDiscover"
+                <DiscoverGroups v-else :available-groups="discoverableGroups" :loading="loadingDiscoverable"
                   @joined="onJoined" @requested="onRequested"/>
               </div>
             </div>
@@ -80,26 +85,29 @@
         </Transition>
       </div>
     </Transition>
+
+    <!-- New chat modal -->
+   <NewChatModal v-model="showNewChat" @chat-opened="handleNewChat"/>
   </Teleport>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useChats } from '~/composables/useChats'
-import { chatService, type Chat } from '~/services/chat.service'
+import { type Chat } from '~/services/chat.service'
 import ChatListItem from './ChatListItem.vue'
 import ChatDetail from './ChatDetail.vue'
 import DiscoverGroups from './DiscoverGroups.vue'
+import NewChatModal from './NewChatModal.vue'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits(['update:modelValue'])
 
-const { allChats, groupChats, activeChat, selectChat, leaveGroup, fetchChats } = useChats()
+const { allChats, groupChats, activeChat, selectChat, leaveGroup, fetchChats, discoverableGroups, loadingDiscoverable, fetchDiscoverableGroups } = useChats()
 
 const search = ref('')
+const showNewChat = ref(false)
 const activeTab = ref<'all' | 'groups' | 'discover'>('all')
-const discoverGroups = ref<Chat[]>([])
-const loadingDiscover = ref(false)
 
 const tabs = [
   { key: 'all', label: 'Todos' },
@@ -119,23 +127,8 @@ function tabUnread(key: 'all' | 'groups') {
   return list.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0)
 }
 
-async function loadDiscoverGroups() {
-  loadingDiscover.value = true
-  try {
-    // Traemos todos los grupos públicos — el backend debería tener un endpoint para esto
-    // Por ahora filtramos los que el usuario NO es miembro
-    const all = await chatService.getMyChats()
-    const myIds = new Set(allChats.value.map(c => c.id))
-    discoverGroups.value = all.filter(c => c.type === 'group' && !myIds.has(c.id))
-  } catch {
-    discoverGroups.value = []
-  } finally {
-    loadingDiscover.value = false
-  }
-}
-
-watch(activeTab, (val) => { if (val === 'discover') loadDiscoverGroups() })
-watch(() => props.modelValue, (val) => { if (val) fetchChats() })
+watch(() => props.modelValue, (val) => { if (val) { fetchChats(); } })
+watch(activeTab, val => { if (val === 'discover') fetchDiscoverableGroups() })
 
 async function handleSelect(chat: Chat) {
   await selectChat(chat)
@@ -144,6 +137,11 @@ async function handleSelect(chat: Chat) {
 async function handleLeave() {
   if (!activeChat.value) return
   await leaveGroup(activeChat.value.id)
+}
+
+function handleNewChat(chat: any) {
+  activeTab.value = 'all'
+  showNewChat.value = false
 }
 
 function onJoined(group: Chat) {
