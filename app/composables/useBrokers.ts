@@ -1,7 +1,9 @@
 import { ref, computed } from 'vue'
 import { userService, type BrokerDto, type BrokerDetailDto } from '~/services/user.service'
+import { useAllyService, type AllyStatusResult } from '~/services/ally.service'
 
 export function useBrokers() {
+  const allyService = useAllyService()
   const brokers = ref<BrokerDto[]>([])
   const total = ref(0)
   const totalPages = ref(0)
@@ -15,6 +17,8 @@ export function useBrokers() {
   const hasNextPage = computed(() => page.value < totalPages.value)
   const hasPrevPage = computed(() => page.value > 1)
 
+  const allyStatusMap = ref<Record<number, AllyStatusResult>>({})
+
   async function fetchBrokers() {
     isLoading.value = true
     error.value = null
@@ -23,6 +27,11 @@ export function useBrokers() {
       brokers.value = result.users
       total.value = result.total
       totalPages.value = result.totalPages
+
+      const ids = brokers.value.map(b => b.id)
+      if(ids.length > 0) {
+        const allyStatuses = await allyService.getStatusBulk(ids)
+      }
     } catch (e: any) {
       error.value = e?.message || 'Error al cargar los asociados'
     } finally {
@@ -55,6 +64,14 @@ export function useBrokers() {
     await fetchBrokers()
   }
 
+  const refreshStatusFor = async (userId: number) => {
+    const res = await allyService.getStatusBulk([userId])
+    allyStatusMap.value = { ...allyStatusMap.value, ...res }
+  }
+
+  const getAllyStatus = (userId: number): AllyStatusResult =>
+    allyStatusMap.value[userId] ?? { status: 'none' }
+
   return {
     brokers,
     total,
@@ -71,6 +88,8 @@ export function useBrokers() {
     prevPage,
     goToPage,
     applySearch,
+    getAllyStatus,
+    refreshStatusFor,
   }
 }
 

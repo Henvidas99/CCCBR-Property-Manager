@@ -227,7 +227,7 @@ const menu: MenuSection[] = [
        { key: 'asociados', name: 'Asociados', link: '/asociados', icon: UserCheck },
       { key: 'chat', name: 'Chat', link: '/chats', icon: MessageSquare },
       // { key: 'groups', name: 'Grupos', link: '/explorer', icon: Users },
-      { key: 'partners', name: 'Aliados', link: '/explorer', icon: Handshake }
+      { key: 'partners', name: 'Aliados', link: '/aliados', icon: Handshake }
     ]
   },
 

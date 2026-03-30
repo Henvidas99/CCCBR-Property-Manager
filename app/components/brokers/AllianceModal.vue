@@ -1,8 +1,12 @@
+<!-- components/brokers/AllianceModal.vue -->
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" @click.self="$emit('close')">
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+    @click.self="$emit('close')"
+  >
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-      <!-- Header gradient -->
-      <div class="px-6 py-5" :style="{ background: 'linear-gradient(135deg, #202d59 0%, #a31e22 100%)' }">
+      <!-- Header -->
+      <div class="px-6 py-5" :style="{ background: colorsPalette.button }">
         <div class="flex items-center gap-3">
           <div class="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/40">
             <img v-if="broker.photo" :src="broker.photo" :alt="broker.fullName" class="w-full h-full object-cover" />
@@ -18,29 +22,55 @@
       </div>
 
       <div class="p-6 flex flex-col gap-4">
-        <p class="text-gray-600 text-sm">
-          Envía una solicitud de alianza a <strong>{{ broker.fullName }}</strong> (<span class="font-mono text-[#202d59]">{{ broker.roleCodeName }}</span>).
+        <!-- Error -->
+        <div v-if="error" class="px-4 py-3 rounded-xl text-sm font-medium"
+          :style="{ background: '#fef2f2', color: colorsPalette.error }">
+          {{ error }}
+        </div>
+
+        <!-- Success -->
+        <div v-if="success" class="px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2"
+          :style="{ background: '#f0fdf4', color: colorsPalette.success }">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          ¡Solicitud enviada exitosamente!
+        </div>
+
+        <p v-if="!success" class="text-gray-600 text-sm">
+          Envía una solicitud de alianza a <strong>{{ broker.fullName }}</strong>.
           Incluye un mensaje opcional para presentarte.
         </p>
+
         <textarea
+          v-if="!success"
           v-model="message"
           rows="3"
           placeholder="Escribe un mensaje de presentación (opcional)..."
-          class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-[#202d59] transition"
+          :disabled="isSending"
+          class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 transition disabled:opacity-50"
+          :style="{ '--tw-ring-color': colorsPalette.primaryB }"
         />
+
         <div class="flex gap-3">
           <button
             @click="$emit('close')"
             class="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition"
           >
-            Cancelar
+            {{ success ? 'Cerrar' : 'Cancelar' }}
           </button>
           <button
+            v-if="!success"
             @click="sendAlliance"
-            class="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition"
-            :style="{ background: 'linear-gradient(45deg, #a31e22 0%, #202d59 100%)' }"
+            :disabled="isSending"
+            class="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            :style="{ background: colorsPalette.button }"
           >
-            Enviar Solicitud
+            <svg v-if="isSending" class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+            {{ isSending ? 'Enviando...' : 'Enviar Solicitud' }}
           </button>
         </div>
       </div>
@@ -51,19 +81,37 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { BrokerDto, BrokerDetailDto } from '~/services/user.service'
+import { useAllyService } from '~/services/ally.service'
+import { colorsPalette } from '~/helpers/colorsPalette'
 
 const props = defineProps<{ broker: BrokerDto | BrokerDetailDto }>()
-const emit = defineEmits<{ (e: 'close'): void }>()
+const emit = defineEmits<{
+  (e: 'close'): void
+  (e: 'sent', brokerId: number): void
+}>()
 
+const service = useAllyService()
 const message = ref('')
+const isSending = ref(false)
+const error = ref<string | null>(null)
+const success = ref(false)
 
 const initials = computed(() =>
-  props.broker.fullName.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
+  props.broker.fullName.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase(),
 )
 
-function sendAlliance() {
-  // TODO: Connect to alliance API endpoint
-  console.log('Sending alliance to', props.broker.id, 'message:', message.value)
-  emit('close')
+async function sendAlliance() {
+  isSending.value = true
+  error.value = null
+  try {
+    await service.sendRequest(props.broker.id, message.value || undefined)
+    success.value = true
+    emit('sent', props.broker.id)
+  } catch (e: any) {
+    const msg = e?.data?.message
+    error.value = Array.isArray(msg) ? msg.join(', ') : (msg || 'Error al enviar la solicitud.')
+  } finally {
+    isSending.value = false
+  }
 }
 </script>
