@@ -21,10 +21,8 @@
         <img v-if="broker.photo" :src="broker.photo" alt="Foto de portada"
           class="w-full h-full object-cover opacity-20 blur-sm scale-110" />
         <div class="absolute inset-0" style="background: linear-gradient(135deg, #202d59ee 0%, #a31e22aa 100%)" />
-        <!-- Decorative shapes -->
         <div class="absolute -bottom-10 -right-10 w-64 h-64 rounded-full bg-[#a31e22] opacity-10" />
         <div class="absolute -top-10 -left-10 w-48 h-48 rounded-full bg-[#00cfe5] opacity-10" />
-        <!-- Back button -->
         <div class="absolute top-4 left-4">
           <NuxtLink to="/asociados" class="flex items-center gap-2 text-white/80 hover:text-white text-sm transition">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
@@ -55,13 +53,13 @@
               </div>
             </div>
 
-            <!-- Name + code + actions -->
+            <!-- Name + actions -->
             <div class="flex-1 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
               <div>
                 <div class="flex flex-wrap items-center gap-2 mb-1">
                   <span class="px-3 py-0.5 rounded-full text-xs font-bold tracking-widest uppercase text-white"
                     style="background: #202d59">
-                    {{ broker.roleCodeName }}
+                    # Asociado {{ broker.roleCodeName }}
                   </span>
                 </div>
                 <h1 class="text-2xl font-bold text-gray-900" style="font-family: Georgia, serif;">
@@ -81,6 +79,7 @@
                   </svg>
                   Llamar
                 </button>
+
                 <button @click="whatsappContact"
                   class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100 transition">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -89,6 +88,23 @@
                   </svg>
                   WhatsApp
                 </button>
+
+                <!-- ── Mensaje directo ── -->
+                <button v-if="currentUserId !== broker.id" @click="startChat(broker.id)" :disabled="startingChat"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                  <svg v-if="startingChat" class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  {{ startingChat ? 'Abriendo…' : 'Mensaje' }}
+                </button>
+
                 <button @click="shareProfile"
                   class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 transition">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
@@ -98,6 +114,7 @@
                   </svg>
                   Compartir
                 </button>
+
                 <button @click="copyLink"
                   class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 text-gray-600 text-xs font-semibold hover:bg-gray-200 transition">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
@@ -107,7 +124,12 @@
                   </svg>
                   {{ copySuccess ? '¡Copiado!' : 'Copiar enlace' }}
                 </button>
-                <button @click="showAllianceModal = true"
+                <div v-if="currentUserId === broker.id"
+                  class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-xs font-bold transition-all duration-200"
+                  :style="{ background: colorsPalette.primaryA + 'cc' }">
+                  Tú
+                </div>
+                <button v-else-if="allyStatus.status == 'none'" @click="showAllianceModal = true"
                   class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-xs font-bold transition"
                   style="background: linear-gradient(45deg, #a31e22 0%, #202d59 100%)">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
@@ -116,6 +138,23 @@
                       d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                   Enviar Alianza
+                </button>
+                <button v-else-if="allyStatus.status === 'request_sent'"
+                  @click.stop="$emit('cancel-request', allyStatus.requestId!)"
+                  class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200"
+                  :style="{ borderColor: colorsPalette.primaryB, color: colorsPalette.primaryB }">
+                  Solicitud enviada ✓
+                </button>
+                <button v-else-if="allyStatus.status === 'request_received'"
+                  @click.stop="$emit('send-alliance', broker)"
+                  class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-xs font-bold transition-all duration-200"
+                  :style="{ background: colorsPalette.secondaryA + 'cc' }">
+                  Responder solicitud
+                </button>
+                <button v-else-if="allyStatus.status === 'ally'"
+                  class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-center"
+                  :style="{ background: '#f0fdf4', color: colorsPalette.success }">
+                  ✓ Aliados
                 </button>
               </div>
             </div>
@@ -126,7 +165,7 @@
       <!-- Main Content Grid -->
       <div class="max-w-5xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-        <!-- LEFT COLUMN: Info + Contact -->
+        <!-- LEFT COLUMN -->
         <div class="lg:col-span-1 flex flex-col gap-5">
 
           <!-- Info Card -->
@@ -136,6 +175,10 @@
               Información
             </h2>
             <ul class="flex flex-col gap-3 text-sm">
+              <li class="flex justify-between gap-2">
+                <span class="text-gray-400"># De Asociado</span>
+                <span class="text-gray-700 font-medium text-right break-all">{{ broker.roleCodeName }}</span>
+              </li>
               <li class="flex justify-between gap-2">
                 <span class="text-gray-400">Correo</span>
                 <span class="text-gray-700 font-medium text-right break-all">{{ broker.email }}</span>
@@ -149,14 +192,6 @@
                 <span class="text-gray-700 font-medium">{{ broker.idNumber || '—' }}</span>
               </li>
               <li class="flex justify-between gap-2">
-                <span class="text-gray-400">Género</span>
-                <span class="text-gray-700 font-medium">{{ genderLabel }}</span>
-              </li>
-              <li class="flex justify-between gap-2">
-                <span class="text-gray-400">Fecha de nacimiento</span>
-                <span class="text-gray-700 font-medium">{{ formatDate(broker.dateOfBirth) }}</span>
-              </li>
-              <li class="flex justify-between gap-2">
                 <span class="text-gray-400">Miembro desde</span>
                 <span class="text-gray-700 font-medium">{{ formatDate(broker.createdDate) }}</span>
               </li>
@@ -167,7 +202,7 @@
             </ul>
           </div>
 
-          <!-- Aliados Section -->
+          <!-- Aliados -->
           <div class="bg-white rounded-2xl shadow-sm p-5 border-t-4 border-[#00cfe5]">
             <h2 class="font-bold text-gray-800 text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
               <span class="w-1 h-4 rounded-full bg-[#00cfe5] inline-block" />
@@ -177,31 +212,25 @@
               </span>
             </h2>
 
-            <!-- Loading -->
             <div v-if="alliesLoading" class="flex justify-center py-4">
               <div class="w-6 h-6 rounded-full border-2 border-[#00cfe5] border-t-transparent animate-spin" />
             </div>
 
-            <!-- Empty -->
             <div v-else-if="alliesByUserId.length === 0" class="py-6 text-center text-gray-400 text-xs">
               Este asociado no tiene aliados registrados.
             </div>
 
-            <!-- List -->
             <ul v-else class="flex flex-col gap-2">
               <li v-for="ally in alliesByUserId" :key="ally.id"
                 class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition cursor-pointer"
-                @click="router.push(`/asociados/perfil?id=${ally.id}`)">
-                <!-- Avatar -->
+                @click="router.push(`/asociados/${ally.id}?id=${ally.id}`)">
                 <div class="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-white shadow">
                   <img v-if="ally.photo" :src="ally.photo" :alt="ally.fullName" class="w-full h-full object-cover" />
-                    <div v-else class="w-full h-full flex items-center justify-center text-white text-xs font-bold"
+                  <div v-else class="w-full h-full flex items-center justify-center text-white text-xs font-bold"
                     style="background: linear-gradient(135deg, #202d59 0%, #a31e22 100%)">
-                    {{ ally.fullName.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() }}
-                    </div>
+                    {{ally.fullName.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()}}
+                  </div>
                 </div>
-
-                <!-- Info -->
                 <div class="min-w-0">
                   <p class="text-sm font-semibold text-gray-700 truncate">{{ ally.fullName }}</p>
                   <p class="text-xs text-gray-400 truncate">{{ ally.roleCodeName }}</p>
@@ -224,18 +253,15 @@
               </h2>
             </div>
 
-            <!-- No properties -->
             <div v-if="!broker.properties || broker.properties.length === 0"
               class="py-10 text-center text-gray-400 text-sm">
               Este asociado no tiene propiedades registradas.
             </div>
 
-            <!-- Properties Grid -->
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div v-for="prop in broker.properties" @click="goToPropertyDetail(prop.id_Property)"
-                :key="prop.id_Property"
+              <div v-for="prop in broker.properties" :key="prop.id_Property"
+                @click="goToPropertyDetail(prop.id_Property)"
                 class="group rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer">
-                <!-- Property Image -->
                 <div class="relative h-36 bg-gray-100 overflow-hidden">
                   <img v-if="prop.photos && prop.photos.length > 0" :src="prop.photos[0]" :alt="prop.title"
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -246,7 +272,6 @@
                         d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
                     </svg>
                   </div>
-                  <!-- Mode badge -->
                   <div class="absolute top-2 left-2">
                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold text-white"
                       style="background: rgba(32,45,89,0.85)">
@@ -254,8 +279,6 @@
                     </span>
                   </div>
                 </div>
-
-                <!-- Property Info -->
                 <div class="p-3">
                   <p class="font-semibold text-gray-800 text-sm truncate group-hover:text-[#202d59] transition">{{
                     prop.title }}</p>
@@ -296,25 +319,34 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AllianceModal from '~/components/brokers/AllianceModal.vue'
 import { useBrokerDetail } from '~/composables/useBrokers'
-import { formatLastSeenAt } from '~/helpers/global.helpers'
+import { useBrokers } from '~/composables/useBrokers'
 import { useAllies } from '~/composables/useAllies'
+import { useChats } from '~/composables/useChats'
+import { useUser } from '~/composables/useUser'
+import { colorsPalette } from '~/helpers/colorsPalette'
 
 const route = useRoute()
 const router = useRouter()
 const { broker, isLoading, error, fetchBroker } = useBrokerDetail()
+const { getAllyStatus, refreshStatusFor } = useBrokers()
 const { fetchAlliesByUserId, alliesByUserId, alliesLoading } = useAllies()
+const { createDirectChat, selectChat } = useChats()
+const { user, fetchUser } = useUser();
 const showAllianceModal = ref(false)
 const copySuccess = ref(false)
+const startingChat = ref(false)
 
-const mockAllies = [
-  { name: 'Carlos Mendoza', code: 'COR-042', initials: 'CM' },
-  { name: 'Valeria Arias', code: 'COR-017', initials: 'VA' },
-  { name: 'Roberto Lima', code: 'COR-089', initials: 'RL' },
-]
+const currentUserId = computed(() => user.value?.id)
+// ── Computed ──────────────────────────────────────────────────────────────────
 
 const initials = computed(() =>
   broker.value?.fullName.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() ?? ''
 )
+
+const allyStatus = computed(() => {
+  if (!broker.value) return { status: undefined, requestId: null }
+  return getAllyStatus(broker.value.id)
+})
 
 const genderLabel = computed(() => {
   const g = broker.value?.gender?.toLowerCase()
@@ -323,36 +355,35 @@ const genderLabel = computed(() => {
   return broker.value?.gender || '—'
 })
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function formatDate(val: Date | string | undefined | null): string {
   if (!val) return '—'
-  const d = new Date(val)
-  return d.toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric' })
+  return new Date(val).toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
 function formatPrice(price: number): string {
   return price.toLocaleString('es-CR')
 }
 
+// ── Actions ───────────────────────────────────────────────────────────────────
+
 function callBroker() {
-  if (broker.value?.phoneNumber) {
-    window.location.href = `tel:${broker.value.phoneNumber}`
-  }
+  if (broker.value?.phoneNumber) window.location.href = `tel:${broker.value.phoneNumber}`
 }
 
 function whatsappContact() {
-  if (broker.value?.phoneNumber) {
-    const phone = broker.value.phoneNumber.replace(/\D/g, '')
-    window.open(`https://wa.me/${phone}?text=Hola ${broker.value.fullName}, te contacto a través del directorio de asociados.`, '_blank')
-  }
+  if (!broker.value?.phoneNumber) return
+  const phone = broker.value.phoneNumber.replace(/\D/g, '')
+  window.open(
+    `https://wa.me/${phone}?text=Hola ${broker.value.fullName}, te contacto a través del directorio de asociados.`,
+    '_blank',
+  )
 }
 
 function shareProfile() {
-  if (broker.value?.phoneNumber) {
-    const url = window.location.href
-    const text = `Mira el perfil de ${broker.value.fullName} (${broker.value.roleCodeName}): ${url}`
-    const phone = broker.value.phoneNumber.replace(/\D/g, '')
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
-  }
+  const text = `Mira el perfil de ${broker.value?.fullName} (${broker.value?.roleCodeName}): ${window.location.href}`
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
 }
 
 async function copyLink() {
@@ -360,8 +391,19 @@ async function copyLink() {
     await navigator.clipboard.writeText(window.location.href)
     copySuccess.value = true
     setTimeout(() => { copySuccess.value = false }, 2500)
-  } catch {
-    // fallback
+  } catch { /* fallback omitted */ }
+}
+
+async function startChat(userId: number) {
+  startingChat.value = true
+  try {
+    const chat = await createDirectChat(userId)
+    if (chat) {
+      await selectChat(chat)
+      router.push('/chats')
+    }
+  } finally {
+    startingChat.value = false
   }
 }
 
@@ -369,16 +411,14 @@ function goToPropertyDetail(propId: number) {
   router.push(`/explorer/${propId}`)
 }
 
-onMounted(() => {
-  const id = Number(route.query.id)
-  if (id) fetchBroker(id)
-})
+// ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
   const id = Number(route.query.id)
   if (id) {
     await fetchBroker(id)
     await fetchAlliesByUserId(id)
+    refreshStatusFor(id)
   }
 })
 </script>

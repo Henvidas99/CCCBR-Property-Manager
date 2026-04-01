@@ -53,8 +53,15 @@
 
       <!-- Actions -->
       <div class="flex items-center gap-2 flex-shrink-0">
+        <div
+          v-if="currentUserId === broker.id"
+          class="flex-1 py-2 rounded-xl text-xs font-semibold text-center text-gray-500"
+          :style="{ background: '#f5f5f5' }"
+        >
+          Tú
+        </div>
         <button
-          v-if="allyStatus.status === 'none'"
+          v-else-if="allyStatus.status === 'none'"
           @click.stop="$emit('send-alliance', broker)"
           class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all"
           :style="{ background: colorsPalette.button }"
@@ -108,7 +115,8 @@ defineEmits<{
 }>()
 
 const router = useRouter()
-
+const { user } = useUser();
+const currentUserId = computed(() => user?.value?.id)
 const borderColors = [
   colorsPalette.primaryA,
   colorsPalette.primaryB,

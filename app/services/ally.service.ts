@@ -10,6 +10,8 @@ export type AllyRelationStatus =
 export interface AllyStatusResult {
   status: AllyRelationStatus
   requestId?: number
+  requesterId?: number
+  receiverId?: number
 }
 
 export interface AllyRequest {

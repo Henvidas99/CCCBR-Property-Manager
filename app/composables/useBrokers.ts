@@ -30,7 +30,8 @@ export function useBrokers() {
 
       const ids = brokers.value.map(b => b.id)
       if(ids.length > 0) {
-        const allyStatuses = await allyService.getStatusBulk(ids)
+        var res = await allyService.getStatusBulk(ids)
+        allyStatusMap.value = { ...allyStatusMap.value, ...res }
       }
     } catch (e: any) {
       error.value = e?.message || 'Error al cargar los asociados'
@@ -69,9 +70,9 @@ export function useBrokers() {
     allyStatusMap.value = { ...allyStatusMap.value, ...res }
   }
 
-  const getAllyStatus = (userId: number): AllyStatusResult =>
-    allyStatusMap.value[userId] ?? { status: 'none' }
-
+  const getAllyStatus = (userId: number): AllyStatusResult => {
+    return allyStatusMap.value[userId] ?? { status: 'none', requestId: undefined }
+  }
   return {
     brokers,
     total,

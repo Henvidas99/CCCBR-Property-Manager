@@ -15,6 +15,7 @@ export interface UserProfile {
   dateOfBirth: string
   createdDate: string
   photo: string
+  lastSeenAt?: string | null
 }
 
 export interface BrokerDto {

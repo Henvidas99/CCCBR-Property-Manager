@@ -38,10 +38,6 @@
       <!-- Stats -->
       <div class="w-full flex justify-around border-t border-gray-100 pt-3 mt-1">
         <div class="flex flex-col items-center">
-          <span class="text-xs text-gray-400">Género</span>
-          <span class="text-sm font-semibold text-gray-700">{{ genderLabel }}</span>
-        </div>
-        <div class="flex flex-col items-center">
           <span class="text-xs text-gray-400">Miembro desde</span>
           <span class="text-sm font-semibold text-gray-700">{{ memberSince }}</span>
         </div>
@@ -50,8 +46,15 @@
       <!-- Actions -->
       <div class="w-full flex gap-2 mt-1">
         <!-- Botón dinámico según allyStatus -->
+        <div
+          v-if="currentUserId === broker.id"
+          class="flex-1 py-2 rounded-xl text-xs font-semibold text-center text-gray-500"
+          :style="{ background: '#f5f5f5' }"
+        >
+          Tú
+        </div>
         <button
-          v-if="allyStatus.status === 'none'"
+          v-else-if="allyStatus.status === 'none'"
           @click.stop="$emit('send-alliance', broker)"
           class="flex-1 py-2 rounded-xl text-xs font-semibold text-white transition-all duration-200"
           :style="{ background: colorsPalette.button }"
@@ -111,7 +114,8 @@ defineEmits<{
 }>()
 
 const router = useRouter()
-
+const { user, fetchUser } = useUser();
+const currentUserId = computed(() => user?.value?.id)
 const borderColors = [
   colorsPalette.primaryA,
   colorsPalette.primaryB,
@@ -132,6 +136,10 @@ const genderLabel = computed(() => {
 const memberSince = computed(() => new Date(props.broker.createdDate).getFullYear().toString())
 
 function goToDetail() {
-  router.push(`/asociados/${props.broker.roleCodeName}?id=${props.broker.id}`)
+  router.push(`/asociados/${props.broker.id}?id=${props.broker.id}`)
 }
+
+onMounted(() => {
+  fetchUser()
+})
 </script>
